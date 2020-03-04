@@ -1,0 +1,228 @@
+//ESTE ES EL PROGRAMA QUE HACE EL MOLINO A BASE DE PRIMITIVAS
+
+#include <GL/glut.h>
+
+float anglex = 0.0f;
+float angley = 0.0f;
+
+void inicializar(void)
+{
+	glClearColor(0.627, 0.984, 0.176, 0.0f);
+
+	glClearDepth(1.0f);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+}
+
+void prisma(void)
+{
+	GLfloat vertice[8][3] = {
+				{0.5 ,-0.5, 0.5},    //Coordenadas Vértice 0 V0
+				{-0.5 ,-0.5, 0.5},    //Coordenadas Vértice 1 V1
+				{-0.5 ,-0.5, -0.5},    //Coordenadas Vértice 2 V2
+				{0.5 ,-0.5, -0.5},    //Coordenadas Vértice 3 V3
+				{0.5 ,0.5, 0.5},    //Coordenadas Vértice 4 V4
+				{0.5 ,0.5, -0.5},    //Coordenadas Vértice 5 V5
+				{-0.5 ,0.5, -0.5},    //Coordenadas Vértice 6 V6
+				{-0.5 ,0.5, 0.5},    //Coordenadas Vértice 7 V7
+	};
+
+	glBegin(GL_QUADS);	//Enfrente
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3fv(vertice[0]);
+	glVertex3fv(vertice[4]);
+	glVertex3fv(vertice[7]);
+	glVertex3fv(vertice[1]);
+	glEnd();
+
+
+	glBegin(GL_POLYGON);	//Derecha
+	glColor3f(0.0, 0.0, 1.0);
+	glVertex3fv(vertice[0]);
+	glVertex3fv(vertice[3]);
+	glVertex3fv(vertice[5]);
+	glVertex3fv(vertice[4]);
+	glEnd();
+
+	glBegin(GL_POLYGON);	//Atrás
+	glColor3f(0.0, 1.0, 0.0);
+	glVertex3fv(vertice[6]);
+	glVertex3fv(vertice[5]);
+	glVertex3fv(vertice[3]);
+	glVertex3fv(vertice[2]);
+	glEnd();
+
+	glBegin(GL_POLYGON);  //Izquierda
+	glColor3f(1.0, 1.0, 1.0);
+	glVertex3fv(vertice[1]);
+	glVertex3fv(vertice[7]);
+	glVertex3fv(vertice[6]);
+	glVertex3fv(vertice[2]);
+	glEnd();
+
+	glBegin(GL_POLYGON);  //Abajo
+
+	glColor3f(0.4, 0.2, 0.6);
+	glVertex3fv(vertice[0]);
+	glVertex3fv(vertice[1]);
+	glVertex3fv(vertice[2]);
+	glVertex3fv(vertice[3]);
+	glEnd();
+
+	glBegin(GL_POLYGON);  //Arriba
+	glColor3f(0.8, 0.2, 0.4);
+	glVertex3fv(vertice[4]);
+	glVertex3fv(vertice[5]);
+	glVertex3fv(vertice[6]);
+	glVertex3fv(vertice[7]);
+	glEnd();
+}
+
+void rectangulo(void)
+{
+	GLfloat vertice[4][2] = {
+		{-2.5, -3.5}, //V0
+		{2.5, -3.5}, //V1
+		{2.5, 3.5}, //V2
+		{-2.5, 3.5} //V3
+	};
+
+	glBegin(GL_POLYGON);
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex2fv(vertice[0]);
+	glVertex2fv(vertice[1]);
+	glVertex2fv(vertice[2]);
+	glVertex2fv(vertice[3]);
+	glEnd();
+
+}
+
+//****************************************************
+
+/*void rectangulo(void) //VERSION EN 3D
+{
+	GLfloat vertice[8][3] = {
+		{-2.5, -3.5, 1}, //V0
+		{2.5, -3.5, 1}, //V1
+		{2.5, -3.5,-1}, //V2
+		{-2.5, -3.5, -1}, //V3
+		{2.5, 3.5, 1}, //V4
+		{2.5, 3.5, -1}, //V5
+		{-2.5, 3.5, -1}, //V6
+		{2.5, 3.5, -1}  //V7
+	};
+
+	glBegin(GL_POLYGON);
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3fv(vertice[0]);
+	glVertex3fv(vertice[1]);
+	glVertex3fv(vertice[2]);
+	glVertex3fv(vertice[3]);
+	glEnd();
+
+}*/
+
+//*****************************************************************
+
+
+/*void triangulo(void)
+{
+	GLfloat vertice[3][2] = {
+		{-0.5, 0.0}, //V0
+		{0.5, 0.0}, //V1
+		{0.0, 0.5} //V2
+	};
+
+	glBegin(GL_POLYGON);
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex2fv(vertice[0]);
+	glVertex2fv(vertice[1]);
+	glVertex2fv(vertice[2]);
+	glEnd();
+}
+
+void trapecio(void)
+{
+	GLfloat vertice[4][2] = {
+		{-1.0, -1.5},  //V0
+		{1.0, -1.5},  //V1
+		{0.5, 1.5},  //V2
+		{-0.5, 1.5}   //V3
+	};
+
+	glBegin(GL_POLYGON);
+	glColor3f(0.0, 0.0, 1.0);
+	glVertex2fv(vertice[0]);
+	glVertex2fv(vertice[1]);
+	glVertex2fv(vertice[2]);
+	glVertex2fv(vertice[3]);
+	glEnd();
+}
+
+/*void circulo(void)
+{
+
+}*/
+
+void dibujar(void)
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glTranslatef(0.0, 2.0, 0.0);
+	glScalef(3.0, 2.0, 1.0);
+	glRotatef(90, 0.0, 1.0, 0.0);
+	prisma();
+
+
+	glFlush();
+}
+
+void remodelar(int width, int height)
+{
+	if (height == 0)
+	{
+		height = 1;
+	}
+
+	glViewport(0, 0, width, height);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+
+	//tipo de vista
+	//--glFrustum(-5, 5, -5, 5, 4, 20);
+	glOrtho(-5, 5, -5, 5, 0.1, 20);
+
+	glutPostRedisplay();
+
+}
+
+
+int main(int argc, char *argv[])
+{
+	glutInit(&argc, argv);
+
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+
+	glutInitWindowSize(500, 500);
+
+	glutInitWindowPosition(50, 25);
+
+	glutCreateWindow("Molino");
+
+	inicializar();
+
+	prisma();
+	//rectangulo();
+
+	glutDisplayFunc(dibujar);
+
+	glutReshapeFunc(remodelar);
+
+	glutMainLoop();
+
+	return 0;
+}
