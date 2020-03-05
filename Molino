@@ -1,6 +1,11 @@
 //ESTE ES EL PROGRAMA QUE HACE EL MOLINO A BASE DE PRIMITIVAS
+//ESTA ES LA NUEVA VERSIÓN
 
 #include <GL/glut.h>
+
+float transz = -10.0f;
+float transx = 0.0f;
+float transy = 0.0f;
 
 float anglex = 0.0f;
 float angley = 0.0f;
@@ -15,17 +20,17 @@ void inicializar(void)
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 }
 
-void prisma(void)
+/*void prisma(void)
 {
 	GLfloat vertice[8][3] = {
-				{0.5 ,-0.5, 0.5},    //Coordenadas Vértice 0 V0
-				{-0.5 ,-0.5, 0.5},    //Coordenadas Vértice 1 V1
-				{-0.5 ,-0.5, -0.5},    //Coordenadas Vértice 2 V2
-				{0.5 ,-0.5, -0.5},    //Coordenadas Vértice 3 V3
-				{0.5 ,0.5, 0.5},    //Coordenadas Vértice 4 V4
-				{0.5 ,0.5, -0.5},    //Coordenadas Vértice 5 V5
-				{-0.5 ,0.5, -0.5},    //Coordenadas Vértice 6 V6
-				{-0.5 ,0.5, 0.5},    //Coordenadas Vértice 7 V7
+		{ 0.5 ,-0.5, 0.5 },    //Coordenadas Vértice 0 V0
+	{ -0.5 ,-0.5, 0.5 },    //Coordenadas Vértice 1 V1
+	{ -0.5 ,-0.5, -0.5 },    //Coordenadas Vértice 2 V2
+	{ 0.5 ,-0.5, -0.5 },    //Coordenadas Vértice 3 V3
+	{ 0.5 ,0.5, 0.5 },    //Coordenadas Vértice 4 V4
+	{ 0.5 ,0.5, -0.5 },    //Coordenadas Vértice 5 V5
+	{ -0.5 ,0.5, -0.5 },    //Coordenadas Vértice 6 V6
+	{ -0.5 ,0.5, 0.5 },    //Coordenadas Vértice 7 V7
 	};
 
 	glBegin(GL_QUADS);	//Enfrente
@@ -79,13 +84,13 @@ void prisma(void)
 	glEnd();
 }
 
-void rectangulo(void)
+/*void rectangulo(void)
 {
 	GLfloat vertice[4][2] = {
-		{-2.5, -3.5}, //V0
-		{2.5, -3.5}, //V1
-		{2.5, 3.5}, //V2
-		{-2.5, 3.5} //V3
+		{ -2.5, -3.5 }, //V0
+	{ 2.5, -3.5 }, //V1
+	{ 2.5, 3.5 }, //V2
+	{ -2.5, 3.5 } //V3
 	};
 
 	glBegin(GL_POLYGON);
@@ -96,68 +101,109 @@ void rectangulo(void)
 	glVertex2fv(vertice[3]);
 	glEnd();
 
-}
+}*/
 
 //****************************************************
 
-/*void rectangulo(void) //VERSION EN 3D
+void rectangulo(void) //VERSION EN 3D
 {
-	GLfloat vertice[8][3] = {
-		{-2.5, -3.5, 1}, //V0
-		{2.5, -3.5, 1}, //V1
-		{2.5, -3.5,-1}, //V2
-		{-2.5, -3.5, -1}, //V3
-		{2.5, 3.5, 1}, //V4
-		{2.5, 3.5, -1}, //V5
-		{-2.5, 3.5, -1}, //V6
-		{2.5, 3.5, -1}  //V7
-	};
+GLfloat vertice[8][3] = {
+	{-2.5, -3.5, 1}, //V0
+	{2.5, -3.5, 1}, //V1
+	{2.5, -3.5,-1}, //V2
+	{-2.5, -3.5, -1}, //V3
+	{2.5, 3.5, 1}, //V4
+	{2.5, 3.5, -1}, //V5
+	{-2.5, 3.5, -1}, //V6
+	{-2.5, 3.5, 1}  //V7
+};
 
-	glBegin(GL_POLYGON);
+glBegin(GL_POLYGON);  //ENFRENTE
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3fv(vertice[0]);
+	glVertex3fv(vertice[1]);
+	glVertex3fv(vertice[4]);
+	glVertex3fv(vertice[7]);
+glEnd();
+
+glBegin(GL_POLYGON); //DERECHA
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3fv(vertice[1]);
+	glVertex3fv(vertice[2]);
+	glVertex3fv(vertice[4]);
+	glVertex3fv(vertice[5]);
+glEnd();
+
+glBegin(GL_POLYGON);  //ATRAS
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3fv(vertice[3]);
+	glVertex3fv(vertice[2]);
+	glVertex3fv(vertice[5]);
+	glVertex3fv(vertice[6]);
+glEnd();
+
+
+glBegin(GL_POLYGON);  //IZQUIERDA
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3fv(vertice[0]);
+	glVertex3fv(vertice[3]);
+	glVertex3fv(vertice[6]);
+	glVertex3fv(vertice[7]);
+glEnd();
+
+glBegin(GL_POLYGON);  //ABAJO
 	glColor3f(1.0, 0.0, 0.0);
 	glVertex3fv(vertice[0]);
 	glVertex3fv(vertice[1]);
 	glVertex3fv(vertice[2]);
 	glVertex3fv(vertice[3]);
-	glEnd();
+glEnd();
 
-}*/
+glBegin(GL_POLYGON);  //ARRIBA
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3fv(vertice[7]);
+	glVertex3fv(vertice[4]);
+	glVertex3fv(vertice[5]);
+	glVertex3fv(vertice[6]);
+glEnd();
+
+}
 
 //*****************************************************************
 
 
 /*void triangulo(void)
 {
-	GLfloat vertice[3][2] = {
-		{-0.5, 0.0}, //V0
-		{0.5, 0.0}, //V1
-		{0.0, 0.5} //V2
-	};
+GLfloat vertice[3][2] = {
+{-0.5, 0.0}, //V0
+{0.5, 0.0}, //V1
+{0.0, 0.5} //V2
+};
 
-	glBegin(GL_POLYGON);
-	glColor3f(1.0, 0.0, 0.0);
-	glVertex2fv(vertice[0]);
-	glVertex2fv(vertice[1]);
-	glVertex2fv(vertice[2]);
-	glEnd();
+glBegin(GL_POLYGON);
+glColor3f(1.0, 0.0, 0.0);
+glVertex2fv(vertice[0]);
+glVertex2fv(vertice[1]);
+glVertex2fv(vertice[2]);
+glEnd();
 }
 
 void trapecio(void)
 {
-	GLfloat vertice[4][2] = {
-		{-1.0, -1.5},  //V0
-		{1.0, -1.5},  //V1
-		{0.5, 1.5},  //V2
-		{-0.5, 1.5}   //V3
-	};
+GLfloat vertice[4][2] = {
+{-1.0, -1.5},  //V0
+{1.0, -1.5},  //V1
+{0.5, 1.5},  //V2
+{-0.5, 1.5}   //V3
+};
 
-	glBegin(GL_POLYGON);
-	glColor3f(0.0, 0.0, 1.0);
-	glVertex2fv(vertice[0]);
-	glVertex2fv(vertice[1]);
-	glVertex2fv(vertice[2]);
-	glVertex2fv(vertice[3]);
-	glEnd();
+glBegin(GL_POLYGON);
+glColor3f(0.0, 0.0, 1.0);
+glVertex2fv(vertice[0]);
+glVertex2fv(vertice[1]);
+glVertex2fv(vertice[2]);
+glVertex2fv(vertice[3]);
+glEnd();
 }
 
 /*void circulo(void)
@@ -169,12 +215,17 @@ void dibujar(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
+
+
 	glLoadIdentity();
+	glTranslatef(transx, transy, transz);
+	glRotatef(angley, 0.0, 1.0, 0.0); //GIRA SOBRE Y SENTIDO HORARIO
+	glRotatef(anglex, 1.0, 0.0, 0.0);
 
 	glTranslatef(0.0, 2.0, 0.0);
 	glScalef(3.0, 2.0, 1.0);
 	glRotatef(90, 0.0, 1.0, 0.0);
-	prisma();
+	rectangulo();
 
 
 	glFlush();
@@ -193,11 +244,62 @@ void remodelar(int width, int height)
 
 
 	//tipo de vista
-	//--glFrustum(-5, 5, -5, 5, 4, 20);
-	glOrtho(-5, 5, -5, 5, 0.1, 20);
+	glFrustum(-5, 5, -5, 5, 4, 20);
+	//glOrtho(-5, 5, -5, 5, 0.1, 20);
 
 	glutPostRedisplay();
 
+}
+
+void teclado(unsigned char key, int x, int y)
+{
+	switch (key) {
+	case 'w': case 'W': //acerca al objeto con traslación en z pos
+		transz += 0.2f;
+		break;
+	case 's': case 'S': //aleja al objeto con traslación en z neg
+		transz -= 0.2f;
+		break;
+	case 'a': case 'A': //traslada objeto hacia la derecha en x pos
+		transx += 0.2f;
+		break;
+	case 'd': case 'D': //traslada objeto hacia la izquierda en x neg
+		transx -= 0.2f;
+		break;
+
+	case 'e': case 'E': //traslada objeto hacia arriba en y pos
+		transy += 0.2f;
+		break;
+	case 'c': case 'C': //traslada objeto hacia abajo en y neg
+		transy -= 0.2f;
+		break;
+	case 27: //Si presiona tecla ESC (ASCII 27) sale
+		exit(0);
+		break;
+	default: //Si es cualquier otra tecla no hace nada
+		break;
+	}
+	glutPostRedisplay();
+}
+void teclasFlechas(int tecla, int x, int y) // Funcion para manejo de teclas especiales (arrow keys)
+{
+	switch (tecla) {
+	case GLUT_KEY_UP: //gira sobre x sentido antihorario, valor positivo
+		anglex += 2.0f;
+		break;
+	case GLUT_KEY_DOWN: //gira sobre x sentido horario, valor negativo
+		anglex -= 2.0f;
+		break;
+	case GLUT_KEY_LEFT: //gira sobre y sentido antihorario, valor positivo
+		angley += 2.0f;
+		break;
+	case GLUT_KEY_RIGHT: //gira sobre y sentido horario, valor negativo
+		angley -= 2.0f;
+		break;
+	default:
+		break;
+	}
+	glutPostRedisplay();
 }
 
 
@@ -215,12 +317,16 @@ int main(int argc, char *argv[])
 
 	inicializar();
 
-	prisma();
-	//rectangulo();
+	//prisma();
+	rectangulo();
 
 	glutDisplayFunc(dibujar);
 
 	glutReshapeFunc(remodelar);
+
+	glutKeyboardFunc(teclado);
+
+	glutSpecialFunc(teclasFlechas);
 
 	glutMainLoop();
 
