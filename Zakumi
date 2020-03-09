@@ -17,11 +17,11 @@ void dibujar(void)
 	//INICIO DEL DIBUJO
 	//PATA DERECHA DE ZAKUMI
 
-	glLineWidth(1.0);
-	glBegin(GL_LINES);
+	//glLineWidth(2.0);
+	glBegin(GL_POLYGON);
 	glColor3f(1.0, 1.0, 0.0);
 	glVertex3f(18.0, 3.0, -1.0);
-	glVertex3f(18.50, 3.0,-1.0);
+	/*glVertex3f(18.50, 3.0,-1.0);
 
 	glVertex3f(18.50, 3.0, -1.0);
 	glVertex3f(19.00, 3.0, -1.0);
@@ -35,11 +35,127 @@ void dibujar(void)
 	glVertex3f(20.00, 3.0, -1.0);
 	glVertex3f(20.50, 3.0, -1.0);
 
-	glVertex3f(20.50, 3.0, -1.0);
-
-
+	glVertex3f(20.50, 3.0, -1.0);*/
+	glVertex3f(23.50, 3.0, -1.0);
+	glVertex3f(23.60, 3.1, -1.0);
+	glVertex3f(23.70, 3.3, -1.0);
+	glVertex3f(23.80, 3.6, -1.0);
+	glVertex3f(23.90, 3.9, -1.0);
+	glVertex3f(24.00, 4.0, -1.0);
+	glVertex3f(24.00, 4.1, -1.0);
+	glVertex3f(24.00, 4.2, -1.0);
+	glVertex3f(23.90, 4.3, -1.0);
+	glVertex3f(23.80, 4.4, -1.0);
+	glVertex3f(23.70, 4.5, -1.0);
+	glVertex3f(23.60, 4.6, -1.0);
+	glVertex3f(23.50, 4.7, -1.0);
+	glVertex3f(23.10, 4.8, -1.0);
+	glVertex3f(23.00, 5.0, -1.0);
+	glVertex3f(22.50, 5.25, -1.0);
+	glVertex3f(22.00, 5.50, -1.0);
+	glVertex3f(21.75, 5.75, -1.0);
+	glVertex3f(21.50, 6.00, -1.0);  //AQUÍ EMPIEZA LA LINEA QUE SOMBRE LA PATA DERECHA
+	glVertex3f(21.00, 6.00, -1.0);  
+	glVertex3f(20.90, 6.10, -1.0);
+	glVertex3f(20.80, 6.20, -1.0);
+	glVertex3f(20.50, 7.50, -1.0);
+	glVertex3f(18.00, 10.50, -1.0);
+	glVertex3f(14.20, 8.80, -1.0);
 	glEnd();
 
+	glBegin(GL_POLYGON);  //SHORT
+	glColor3f(0.0, 1.0, 0.0);
+	glVertex3f(13.90, 8.80, -1.0);
+	glVertex3f(18.00, 11.00, -1.0);
+	glVertex3f(17.00, 12.00, -1.0);
+	glVertex3f(9.50, 12.00, -1.0);
+	glVertex3f(8.50, 10.00, -1.0);
+	glVertex3f(12.20, 8.90, -1.0);
+	glVertex3f(12.50, 9.70, -1.0);
+	glVertex3f(13.10, 9.70, -1.0);
+	glVertex3f(13.90, 8.80, -1.0);
+	glEnd();
+
+	glBegin(GL_POLYGON); //PATA IZQUIERDA
+	glColor3f(1.0, 1.0, 0.0);
+	glVertex3f(12.20, 8.90, -1.0);
+	glVertex3f(10.90, 3.00, -1.0);
+	glVertex3f(5.0, 3.0, -1.0);
+	glVertex3f(8.70, 9.80, -1.0);
+	glEnd();
+
+	glBegin(GL_POLYGON);  //CAMISA
+	glColor3f(1.0, 1.0, 1.0);
+	glVertex3f(9.50, 12.00, -1.0);
+	glVertex3f(17.00, 12.00, -1.0);
+	glVertex3f(16.80, 13.00, -1.0);
+	glVertex3f(16.50, 14.00, -1.0);
+	glVertex3f(16.20, 16.00, -1.0);
+	glVertex3f(16.10, 17.50, -1.0);
+	glVertex3f(16.50, 17.20, -1.0);//
+	glVertex3f(17.00, 17.50, -1.0);
+	glVertex3f(17.80, 16.70, -1.0);
+	glVertex3f(19.80, 18.80, -1.0);
+	glVertex3f(17.50, 19.50, -1.0); //Manga derecha
+	glVertex3f(17.00, 19.00, -1.0);
+	glVertex3f(16.00, 18.85, -1.0);
+	glVertex3f(15.00, 18.75, -1.0);
+	glVertex3f(14.00, 18.50, -1.0);
+	glVertex3f(13.00, 18.75, -1.0);
+	glVertex3f(12.00, 18.85, -1.0);
+	glVertex3f(11.00, 19.00, -1.0);
+	glVertex3f(10.50, 19.50, -1.0);
+	glVertex3f(9.50, 18.80, -1.0);
+	glVertex3f(9.50, 17.00, -1.0);
+	glVertex3f(10.50, 16.80, -1.0);
+	glVertex3f(10.00, 15.00, -1.0);
+	glVertex3f(9.50, 12.00, -1.0);
+	glEnd();
+
+	//COLA
+	glBegin(GL_POLYGON);
+	glColor3f(0.0, 1.0, 1.0);
+	glVertex3f(18.00, 11.00, -1.0);
+	glVertex3f(19.00, 11.00, -1.0);
+	glVertex3f(20.00, 11.00, -1.0);
+	glVertex3f(21.00, 11.00, -1.0);
+	glVertex3f(21.50, 11.20, -1.0);
+	glVertex3f(22.00, 11.50, -1.0);
+	glVertex3f(23.00, 12.50, -1.0);
+	glVertex3f(24.00, 13.00, -1.0);
+	glVertex3f(24.50, 14.00, -1.0);
+	glVertex3f(25.50, 14.70, -1.0);
+	glVertex3f(26.50, 15.50, -1.0);
+	glVertex3f(27.10, 15.80, -1.0);
+	glVertex3f(28.00, 16.00, -1.0);
+	glVertex3f(29.00, 16.00, -1.0);
+	glVertex3f(30.00, 16.00, -1.0);
+	glVertex3f(30.50, 15.90, -1.0);
+	glVertex3f(31.10, 15.65, -1.0);
+	glVertex3f(31.30, 15.55, -1.0);
+	glVertex3f(31.50, 15.00, -1.0);
+	glVertex3f(31.40, 14.90, -1.0);
+	glVertex3f(31.30, 14.75, -1.0);
+	glVertex3f(31.10, 14.50, -1.0);
+	glVertex3f(31.00, 13.50, -1.0);
+	glVertex3f(30.50, 13.20, -1.0);
+	glVertex3f(30.00, 13.00, -1.0);
+	glVertex3f(28.00, 13.00, -1.0);
+	glVertex3f(27.50, 12.90, -1.0);
+	glVertex3f(26.50, 12.50, -1.0);
+	glVertex3f(25.50, 12.10, -1.0);
+	glVertex3f(24.50, 11.80, -1.0);
+	glVertex3f(23.50, 11.30, -1.0);
+	glVertex3f(23.00, 10.60, -1.0);
+	glVertex3f(22.10, 10.20, -1.0);
+	glVertex3f(21.50, 9.80, -1.0);
+	glVertex3f(21.00, 9.50, -1.0);
+	glVertex3f(20.00, 9.20, -1.0);
+	glVertex3f(19.70, 9.20, -1.0);
+	glVertex3f(19.00, 9.80, -1.0);
+
+	
+	glEnd();
 
 	glFlush();
 
