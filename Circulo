@@ -1,0 +1,62 @@
+#include <windows.h>
+#include <gl/glut.h>
+#include <math.h>
+
+void circulo(void)
+{
+	glColor3f(0.0, 0.0, 1.0);
+	glLineWidth(3.0);
+	glBegin(GL_LINE_LOOP);
+	for (int i = 0; i <= 360; i++) {
+		double angle = 2 * 3.1416 * i / 360; //Aquí se obtiene el ángulo
+		double x = cos(angle) * 0.75; //Aquí de define el tamaño del circulo
+		double y = sin(angle) * 0.75; //Aquí se define el tamaño del circulo
+
+		glVertex2d(x, y); //Se dibujan las coordenadas
+	}
+	glEnd();
+	
+}
+
+
+//Funcion de dibujado
+void dibujar(void)
+{
+	//Color de fondo por r,g,b y transparencia
+	glClearColor(1, 0, 0, 1);
+	//Borra la pantall (buffer) indicado (buffer de color) y muestra el color de la funcion de arriba
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glMatrixMode(GL_MODELVIEW);
+
+	glLoadIdentity();
+
+	circulo();
+	
+	//Ordena dibujando con la ejecucion de comandos de la pila
+	glFlush();
+}
+
+
+//función principal
+int main(int argc, char *argv[])
+{
+	//inicializa GLUT con el sistema de ventanas pasando los argumentos del main
+	glutInit(&argc, argv);
+	//Buffer simple para dibujar
+	//Colores RGB
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
+	//Define ventana de 500 pixeles de ancho por 250 de alto
+	glutInitWindowSize(500, 500);
+	//Posiciona la ventana de izquierda a derecha 50 pixeles y de arriba a abajo 25
+	glutInitWindowPosition(50, 25);
+	//Crea y abre la ventana y recibe el nombre que va en su barra de título
+	glutCreateWindow("Circunferencia");
+
+	//Llamada a la funcion a ser dibujada y redibujada
+	glutDisplayFunc(dibujar);
+	//Llamada a funcion que cede el control a GLUT y procesa eventos de ventana,raton
+		glutMainLoop();
+	//termina la ejecucion devolviendo cero
+	return 0;
+}
