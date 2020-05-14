@@ -1,0 +1,762 @@
+#include <GL/glut.h>
+
+#include "texture.h"
+#include "figuras.h"
+#include "Camera.h"
+
+#include "cmodel/CModel.h"
+
+
+//incluyendo biblioteca de irrklang
+#include <irrKlang.h>
+
+//enlazando al dll
+#pragma comment(lib, "irrKlang.lib")
+
+//arrancando el motor de sonido
+irrklang::ISoundEngine* engine = irrklang::createIrrKlangDevice();
+
+//agregando fuente de sonido para el audio de fondo
+irrklang::ISoundSource* audioFondo = engine->addSoundSourceFromFile("audios/101-opening.mp3");
+
+//agregando fuente de sonido para el audio de pikachu que es lanzado con tecla
+irrklang::ISoundSource* audioPikachu = engine->addSoundSourceFromFile("audios/025-Pikachu.wav");
+
+
+//----------------------------------------------
+//para Linux las fuentes de sonido deben ser ogg
+
+//agregando fuente de sonido para el audio de fondo
+//irrklang::ISoundSource* audioFondo = engine->addSoundSourceFromFile("audios/101-opening.ogg");
+
+//agregando fuente de sonido para el audio de pikachu que es lanzado con tecla
+//irrklang::ISoundSource* audioPikachu = engine->addSoundSourceFromFile("audios/025-Pikachu.ogg");
+//----------------------------------------------
+
+
+//variables para cámara
+CCamera objCamera;	//Create objet Camera
+GLfloat g_lookupdown = 0.0f;    // Look Position In The Z-Axis (NEW) 
+
+
+//variables para texto dibujado
+char s[30];
+long int font = (long int)GLUT_BITMAP_HELVETICA_18;
+
+
+//objetos de textura para skybox
+CTexture textSkyboxUnica;
+CTexture textSkyboxFrontal;
+CTexture textSkyboxAtras;
+CTexture textSkyboxIzquierda;
+CTexture textSkyboxDerecha;
+CTexture textSkyboxArriba;
+CTexture textSkyboxAbajo;
+
+//objetos de textura para ciudad
+CTexture textCampo;	//textura para campo de futbol
+CTexture textGradaFrontal;
+CTexture textArbol1;
+CTexture textArbol2;
+CTexture textTierra;
+CTexture textNube1;
+CTexture textCaminoPeatonal;
+CTexture textCaminoCarritos;
+CTexture textBasePasto;
+CTexture text1; //techo edificio #1
+CTexture text2; //frente edificio #1
+
+
+//objetos de figura
+CFiguras figSkybox;
+CFiguras figCampo;
+CFiguras figGradaFrontal;
+CFiguras figPostes;
+CFiguras figCaminoPeatonal;
+CFiguras figCaminoCarritos;
+CFiguras figBasePasto;
+CFiguras figEdificio;
+
+
+void inicializar(void)     // Inicializamos parametros
+{
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);	// Negro de fondo	
+
+	glEnable(GL_TEXTURE_2D);
+
+	glShadeModel(GL_SMOOTH);
+
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
+	glClearDepth(1.0f);			// Configuramos Depth Buffer
+	glEnable(GL_DEPTH_TEST);	// Habilitamos Depth Testing
+	glDepthFunc(GL_LEQUAL);		// Tipo de Depth Testing a realizar
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	glEnable(GL_AUTO_NORMAL);
+	glEnable(GL_NORMALIZE);
+
+
+	
+	//http://www.custommapmakers.org/skyboxes.php
+	//con imágenes hechas para skybox para cada lado y arriba
+
+	textSkyboxFrontal.LoadTGA("ely_hills/hills_ft.tga");
+	textSkyboxFrontal.BuildGLTexture();
+	textSkyboxFrontal.ReleaseImage();
+
+	textSkyboxAtras.LoadTGA("ely_hills/hills_bk.tga");
+	textSkyboxAtras.BuildGLTexture();
+	textSkyboxAtras.ReleaseImage();
+
+	textSkyboxIzquierda.LoadTGA("ely_hills/hills_lf.tga");
+	textSkyboxIzquierda.BuildGLTexture();
+	textSkyboxIzquierda.ReleaseImage();
+
+	textSkyboxDerecha.LoadTGA("ely_hills/hills_rt.tga");
+	textSkyboxDerecha.BuildGLTexture();
+	textSkyboxDerecha.ReleaseImage();
+
+	textSkyboxArriba.LoadTGA("ely_hills/hills_up.tga");
+	textSkyboxArriba.BuildGLTexture();
+	textSkyboxArriba.ReleaseImage();
+	
+
+	//texturas para ciudad
+	textGradaFrontal.LoadTGA("city/casa01.tga");
+	textGradaFrontal.BuildGLTexture();
+	textGradaFrontal.ReleaseImage();
+
+	textCampo.LoadTGA("parque/pasto-v2.tga");
+	textCampo.BuildGLTexture();
+	textCampo.ReleaseImage();
+	
+	textArbol1.LoadTGA("arbol1.tga");
+	textArbol1.BuildGLTexture();
+	textArbol1.ReleaseImage();
+	
+	textArbol2.LoadTGA("arbol2512x512.tga");
+	textArbol2.BuildGLTexture();
+	textArbol2.ReleaseImage();
+
+	textTierra.LoadTGA("tierra512x512.tga");
+	textTierra.BuildGLTexture();
+	textTierra.ReleaseImage();
+
+	textNube1.LoadTGA("nube1.tga");
+	textNube1.BuildGLTexture();
+	textNube1.ReleaseImage();
+
+	textCaminoPeatonal.LoadTGA("camino1512x512.tga");
+	textCaminoPeatonal.BuildGLTexture();
+	textCaminoPeatonal.ReleaseImage();
+
+	textCaminoCarritos.LoadTGA("caminoCarritos512x512.tga");
+	textCaminoCarritos.BuildGLTexture();
+	textCaminoCarritos.ReleaseImage();
+	
+	textBasePasto.LoadTGA("basePasto1.tga");
+	textBasePasto.BuildGLTexture();
+	textBasePasto.ReleaseImage();
+	
+
+	//Texturas para edificios
+	//para edificio #1
+	text1.LoadTGA("city/techo.tga"); //techo
+	text1.BuildGLTexture();
+	text1.ReleaseImage();
+
+	text2.LoadTGA("city/casa01256.tga"); //frente
+	text2.BuildGLTexture();
+	text2.ReleaseImage();
+
+	objCamera.Position_Camera(0, 2.5f, 3, 0, 2.5f, 0, 0, 1, 0);
+
+
+	//valida si pudo crear el motor de audio
+	if (!engine)
+	{
+		printf("\n No pude crear el motor de audio :(");
+		exit(0); //termina ejecución justo aquí
+	}
+	
+	//reproduce con el 20% del sonido
+	audioFondo->setDefaultVolume(0.2f);
+
+	//reproduce el sonido sin detenerse
+	engine->play2D(audioFondo, true);
+}
+
+
+void ciudad (void)
+{
+		glPushMatrix(); //base de pasto que cubre largo y profundidad del skybox
+			glScalef(130,0.025,130);
+			glDisable(GL_LIGHTING);
+			figBasePasto.prisma2(textBasePasto.GLindex, 0);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+
+	
+		glPushMatrix(); //Campo
+			//glTranslatef(23.5,0.0,0.0);
+			//el campo mide 100 x 64 pero usaré la mitad de tamaño
+			//agrego 4 más por el pasto fuera del campo
+			glScalef(54,0.1,36);
+			glDisable(GL_LIGHTING);
+			figCampo.prisma2(textCampo.GLindex, 0);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+
+		glPushMatrix(); //Grada frontal
+			glTranslatef(0.0,3.0,-21.0);
+			glRotatef(90,1,0,0);
+			//glRotatef(180,0,0,1);
+			glScalef(54,5.0,6);
+			glDisable(GL_LIGHTING);
+			figGradaFrontal.prisma2(textGradaFrontal.GLindex, 0);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+		
+		glPushMatrix(); //poste1
+			glTranslatef(25.0, 0.0, -3.6);
+			figPostes.cilindro(0.1, 2.0, 30.0, 0);
+		glPopMatrix();
+		
+		glPushMatrix(); //poste2
+			glTranslatef(25.0, 0.0, 3.6);
+			figPostes.cilindro(0.1, 2.0, 30.0, 0);
+		glPopMatrix();
+		
+		glPushMatrix(); //travesaño
+			glTranslatef(25.0, 2.05, -3.65);
+			glRotatef(90.0, 1.0, 0.0, 0.0);
+			figPostes.cilindro(0.1, 7.32, 30.0, 0);
+		glPopMatrix();
+		
+		
+		glPushMatrix(); //Tierra inferior para espacio para arbolitos
+			glTranslatef(0.0,0.0,21.0);
+			//glRotatef(90,1,0,0);
+			//glRotatef(180,0,0,1);
+			glScalef(54,0.1,6);
+			glDisable(GL_LIGHTING);
+			figGradaFrontal.prisma2CaminosH(textTierra.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();	
+		
+		glPushMatrix(); //Tierra lateral derecha para espacio para arbolitos
+			glTranslatef(30.0,0.0,0.0);
+			glRotatef(90,0,1,0);
+			//glRotatef(180,0,0,1);
+			glScalef(48,0.1,6);
+			glDisable(GL_LIGHTING);
+			figGradaFrontal.prisma2CaminosH(textTierra.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+		
+		
+		//bloque para camino peatonal
+		glPushMatrix(); //camino peatonal inferior
+			glTranslatef(0.0,0.0,26.0);
+			glScalef(66,0.1,4);
+			glDisable(GL_LIGHTING);
+			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();	
+		
+		glPushMatrix(); //camino peatonal lateral derecho
+			glTranslatef(35.0,0.0,0.0);
+			glRotatef(90,0,1,0);
+			glScalef(56,0.1,4);
+			glDisable(GL_LIGHTING);
+			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();	
+
+
+		//camino peatonal lateral izquierdo
+		glPushMatrix();
+			glTranslatef(-35.0, 0.0, 0.0);
+			glRotatef(90, 0, 1, 0);
+			glScalef(56, 0.1, 4.0);
+			glDisable(GL_LIGHTING);
+			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+
+		//camino peatonal superior
+		glPushMatrix();
+			glTranslatef(0.0, 0.0, -26.0);
+			glScalef(66, 0.1, 4);
+			glDisable(GL_LIGHTING);
+			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+
+		//camino peatonal superior (frente a los edificios)
+		glPushMatrix();
+			glTranslatef(0.0, 0.0, -36.0);
+			glScalef(66, 0.1, 4);
+			glDisable(GL_LIGHTING);
+			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+		
+		//bloque para camino de carritos
+		glPushMatrix(); //camino carritos inferior
+			glTranslatef(0.0,0.0,31.0);
+			glScalef(74,0.05,6);
+			glDisable(GL_LIGHTING);
+			figCaminoPeatonal.prisma2CaminosH(textCaminoCarritos.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();	
+
+		//camino de carritos superior
+		glPushMatrix(); 
+			glTranslatef(0.0, 0.0, -31.0);
+			glScalef(74, 0.05, 6);
+			glDisable(GL_LIGHTING);
+			figCaminoPeatonal.prisma2CaminosH(textCaminoCarritos.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+		
+		glPushMatrix(); //camino carritos lateral derecho
+			glTranslatef(40.0,0.0,0.0);
+			glRotatef(90,0,1,0);
+			glScalef(68,0.05,6);
+			glDisable(GL_LIGHTING);
+			figCaminoPeatonal.prisma2CaminosH(textCaminoCarritos.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+
+		//camino de carritos lateral izquierdo
+		glPushMatrix(); 
+			glTranslatef(-40.0, 0.0, 0.0);
+			glRotatef(90, 0, 1, 0);
+			glScalef(68, 0.05, 6);
+			glDisable(GL_LIGHTING);
+			figCaminoPeatonal.prisma2CaminosH(textCaminoCarritos.GLindex, 6);
+			glEnable(GL_LIGHTING);
+		glPopMatrix();
+
+		//Dibujanda el edificio #1
+		glPushMatrix(); 
+			glTranslatef(0.0, 3.0, -40.5);
+			glRotatef(90, 1, 0, 0);
+			glRotatef(180, 0, 0, 1);
+			glScalef(10, 5.0, 6);
+			//glDisable(GL_LIGHTING);
+			figEdificio.prisma3(text2.GLindex, 0, text1.GLindex);
+			//glEnable(GL_LIGHTING);
+		glPopMatrix();
+}
+
+
+void arbol_fondoTransparente(CTexture textura)
+{
+	glPushMatrix();
+		glDisable(GL_LIGHTING);
+		glEnable(GL_ALPHA_TEST);
+		glAlphaFunc(GL_GREATER, 0.1);
+		//glBindTexture(GL_TEXTURE_2D, textArbol1.GLindex);
+		glBindTexture(GL_TEXTURE_2D, textura.GLindex);
+		
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(45, 0, 1, 0);
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(-45, 0, 1, 0);
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(90, 0, 1, 0);
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+		glDisable(GL_ALPHA_TEST);
+		glEnable(GL_LIGHTING);
+
+	glPopMatrix();
+}
+
+
+void nube(CTexture textura)
+{
+	glPushMatrix();
+		glDisable(GL_LIGHTING);
+		glEnable(GL_ALPHA_TEST);
+		glAlphaFunc(GL_GREATER, 0.1);
+		glBindTexture(GL_TEXTURE_2D, textura.GLindex);
+		
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+	
+	glPushMatrix();
+		glRotatef(11.25, 1, 0, 0);
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+	
+	glPushMatrix();
+		glRotatef(22.5, 1, 0, 0);
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+	
+	glPushMatrix();
+		glRotatef(33.75, 1, 0, 0);
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(-11.25, 1, 0, 0);
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(-22.5, 1, 0, 0);
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(-33.75, 1, 0, 0);
+		glBegin(GL_QUADS); //plano
+			glColor3f(1.0, 1.0, 1.0);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glTexCoord2f(0.0f, 0.0f); glVertex3f(-10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 0.0f); glVertex3f(10.0, 0.0, 0.0);
+			glTexCoord2f(1.0f, 1.0f); glVertex3f(10.0, 20.0, 0.0);
+			glTexCoord2f(0.0f, 1.0f); glVertex3f(-10.0, 20.0, 0.0);
+		glEnd();
+	glPopMatrix();
+}
+
+
+void pintaTexto(float x, float y, float z, void *font, char *string)
+{
+	char *c;     //Almacena los caracteres a escribir
+	glRasterPos3f(x, y, z);	//Posicion apartir del centro de la ventana
+	//glWindowPos2i(150,100);
+	for (c = string; *c != '\0'; c++) //Condicion de fin de cadena
+	{
+		glutBitmapCharacter(font, *c); //imprime
+	}
+}
+
+void dibujar(void)   // Creamos la funcion donde se dibuja
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		// Limpiamos pantalla y Depth Buffer
+
+	glLoadIdentity();
+
+	glPushMatrix();
+
+
+		glRotatef(g_lookupdown, 1.0f, 0, 0);
+	
+		gluLookAt(objCamera.mPos.x, objCamera.mPos.y, objCamera.mPos.z,
+			objCamera.mView.x, objCamera.mView.y, objCamera.mView.z,
+			objCamera.mUp.x, objCamera.mUp.y, objCamera.mUp.z);
+	
+	
+		glPushMatrix();
+		
+			glPushMatrix(); //Creamos cielo
+				glDisable(GL_LIGHTING);
+						
+				//skybox modificado para recibir una imagen por cada cara
+				figSkybox.skyboxH(130.0, 130.0, 130.0,textSkyboxFrontal.GLindex, textSkyboxAtras.GLindex, textSkyboxIzquierda.GLindex, textSkyboxDerecha.GLindex, textSkyboxArriba.GLindex);
+					
+				glEnable(GL_LIGHTING);
+			glPopMatrix();
+	
+	
+			glPushMatrix(); //creamos la ciudad
+				glEnable ( GL_COLOR_MATERIAL );
+					ciudad();
+				glDisable ( GL_COLOR_MATERIAL );
+			glPopMatrix();	
+			
+			
+			glPushMatrix(); //creamos varios árbolitos con fondo transparente
+				glTranslatef(0.0, 0.0, 21.0);
+				arbol_fondoTransparente(textArbol1);
+				
+				glPushMatrix();
+					glTranslatef(10.0, 0.0, 0.0);
+					glScalef(0.5, 0.5, 0.5);
+					arbol_fondoTransparente(textArbol2);
+				glPopMatrix();
+			glPopMatrix();
+
+			//creando un arbolito propio
+			glPushMatrix();
+			glTranslatef(0.0, 0.0, 40.0);
+			arbol_fondoTransparente(textArbol1);
+			glScalef(0.5, 0.5, 0.5);
+			glPopMatrix();
+	
+			glPushMatrix(); //creamos árbolitos con ciclo
+				glTranslatef(30.0, 0.0, -24.0);
+	
+				for(int coloca=0; coloca<=48; coloca+=3)
+				{
+				glPushMatrix();
+					glTranslatef(0.0, 0.0, (float)coloca);
+					glScalef(0.2, 0.2, 0.2);
+					arbol_fondoTransparente(textArbol2);
+				glPopMatrix();
+				}
+			glPopMatrix();
+			
+	
+			glPushMatrix();
+				glTranslatef(0.0, 50.0, 0.0);
+				nube(textNube1);
+			glPopMatrix();
+	
+	
+		glPopMatrix();
+	glPopMatrix();
+
+
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_LIGHTING);
+	glColor3f(1.0, 0.0, 0.0);
+	pintaTexto(-11, 12.0, -14.0, (void *)font, "Ejemplo de arboles");
+	pintaTexto(-11, 8.5, -14, (void *)font, s);
+	glColor3f(1.0, 1.0, 1.0);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_TEXTURE_2D);
+
+	glFlush();
+	glutSwapBuffers();
+
+}
+
+
+void remodelar(int width, int height)
+{
+	if (height == 0)	// Prevenir división entre cero
+	{
+		height = 1;
+	}
+
+	glViewport(0, 0, width, height);
+
+	glMatrixMode(GL_PROJECTION);	// Seleccionamos Projection Matrix
+	glLoadIdentity();
+
+	// Tipo de Vista
+	glFrustum(-0.1, 0.1, -0.1, 0.1, 0.1, 500.0);
+
+	glMatrixMode(GL_MODELVIEW);		// Seleccionamos Modelview Matrix
+	glLoadIdentity();
+}
+
+void teclado(unsigned char key, int x, int y)
+{
+	switch (key) {
+	case 'w': case 'W':
+		objCamera.Move_Camera(CAMERASPEED + 0.2);
+		break;
+
+	case 's': case 'S':
+		objCamera.Move_Camera(-(CAMERASPEED + 0.2));
+		break;
+
+	case 'a': case 'A':
+		objCamera.Strafe_Camera(-(CAMERASPEED + 0.4));
+		break;
+
+	case 'd': case 'D':
+		objCamera.Strafe_Camera(CAMERASPEED + 0.4);
+		break;
+
+	case 'p':
+		engine->play2D(audioPikachu);
+		break;
+	case 27:  //Si presiona tecla ESC (ASCII 27) sale
+		exit(0);
+		break;
+	default:  //Si es cualquier otra tecla no hace nada
+		break;
+	}
+
+	glutPostRedisplay();
+}
+
+void teclasFlechasFunc(int a_keys, int x, int y)
+{
+	switch (a_keys) {
+	case GLUT_KEY_PAGE_UP:	//tecla avance de página
+		objCamera.UpDown_Camera(CAMERASPEED);
+		break;
+
+	case GLUT_KEY_PAGE_DOWN:	//tecla retroceso de página
+		objCamera.UpDown_Camera(-CAMERASPEED);
+		break;
+
+	case GLUT_KEY_UP:	//tecla ARRIBA
+		g_lookupdown -= 1.0f;
+		break;
+
+	case GLUT_KEY_DOWN:	//tecla ABAJO
+		g_lookupdown += 1.0f;
+		break;
+
+	case GLUT_KEY_LEFT:	//tecla izquierda
+		objCamera.Rotate_View(-CAMERASPEED);
+		break;
+
+	case GLUT_KEY_RIGHT:	//tecla derecha
+		objCamera.Rotate_View(CAMERASPEED);
+		break;
+
+		//teclas para cámara
+	case GLUT_KEY_F1:
+		//cámara en el centro del campo
+		objCamera.Position_Camera(0, 2.5f, 3, 0, 2.5f, 0, 0, 1, 0);
+		break;
+
+	case GLUT_KEY_F2:
+		//cámara de transmisión
+		objCamera.Position_Camera(0, 10.0f, 20, 0, 2.5f, 0, 0, 1, 0);
+		break;
+
+	case GLUT_KEY_F3:
+		//cámara desde el centro hacia la portería
+		objCamera.Position_Camera(5.0, 2.5f, 0, 20, 2.5f, 0, 0, 1, 0);
+		break;
+
+	case GLUT_KEY_F4:
+		//cámara del tiro de esquina
+		objCamera.Position_Camera(25.0, 2.5f, 20, 20, 2.5f, 0, 0, 1, 0);
+		break;
+
+	case GLUT_KEY_F6:
+		//cámara sobre línea de gol
+		objCamera.Position_Camera(25.0, 15.0f, 0, 25, 0, 0, 1, 0, 0);
+		break;
+
+	default:
+		break;
+	}
+	glutPostRedisplay();
+}
+
+int main(int argc, char** argv)   // Main Function
+{
+	//inicializa GLUT con el sistema de ventanas pasando los argumentos del main
+	glutInit(&argc, argv);
+
+	//Buffer simple para dibujar
+	//Colores RGB y alpha
+	//Buffer de profundidad
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+
+	//Define ventana de 500 pixeles de ancho por 500 de alto
+	glutInitWindowSize(500, 500);
+
+	//Posiciona la ventana de izquierda a derecha 400 pixeles y de arriba a abajo 100
+	glutInitWindowPosition(400, 100);
+
+	//Crea y abre la ventana y recibe el nombre que va en su barra de título
+	glutCreateWindow("Hola Mundo");
+
+	//Llamada a función propia para inicializar estados de opengl
+	inicializar();
+
+	//Llamada a la función a ser dibujada y redibujada
+	glutDisplayFunc(dibujar);
+
+	//Llamada a función para cambio de tamaño de ventana
+	glutReshapeFunc(remodelar);
+
+	//Lamada a función que maneja eventos del teclado con teclas normales
+	glutKeyboardFunc(teclado);
+
+	//Lamada a función que maneja eventos del teclado con teclas de flechas de dirección y f1, f2 .. fn
+	glutSpecialFunc(teclasFlechasFunc);
+
+	//Llamada a función que cede el control a GLUT y procesa eventos de ventana, ratón
+	glutMainLoop();
+
+	//termina la ejecución devolviendo cero
+	return 0;
+
+}
