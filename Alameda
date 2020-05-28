@@ -1,14 +1,72 @@
-#include <GL/glut.h>
+//Semestre 2020
+//************************************************************//
+//************************************************************//
+//************** Alumno (s): *********************************//
+//*************	Alonso Sotres Arian                     ******//
+//************* Amin Urcid Garcia                       ******//
+//************************************************************//
+//************************************************************//
 
+
+#include <GL/glut.h>
+#include <ctime>
 #include "texture.h"
 #include "figuras.h"
 #include "Camera.h"
+#define ROTSPEED 0.03
+#define TIMERMSECS 5
+
+// Global variables for measuring time (in milli-seconds)
+clock_t startTime;
+clock_t prevTime;
+
+int frame = 0, timebase = 0;
+int deltaTime = 0;
+//Posición para el muñeco central
+float posX = 0, posY = 2.5, posZ = -3.5;
+//Posición para el muñeco 2
+float posXs = 0, posYs = 2.5, posZs = 15.0;
+float giroMonito2 = 0;
+
+#define MAX_FRAMES 40
+int i_max_steps = 90;
+int i_curr_steps = 0;
+
+typedef struct _frame
+{
+	//Variables para GUARDAR Key Frames
+	float posXs;		//Variable para PosicionX
+	float posYs;		//Variable para PosicionY
+	float posZs;		//Variable para PosicionZ
+	float incXs;		//Variable para IncrementoX
+	float incYs;		//Variable para IncrementoY
+	float incZs;		//Variable para IncrementoZ
+	//float rotRodIzq;
+	//float rotInc;
+	float giroMonito2;
+	float giroMonito2Inc;
+
+}FRAME;
+
+FRAME KeyFrame[MAX_FRAMES];
+int FrameIndex = 0;			//introducir datos
+bool play = false;
+int playIndex = 0;
+
+//int w = 500, h = 500;
+//int frame = 0, time, timebase = 0;
+
+
+//---- PARA LAS ANIMACIONES
+bool TrashAnima = false;
+float desplaza = 0.0;
 
 #include "cmodel/CModel.h"
 
-
+//-------------------------------------------------------------------------------------------------//
+// Biblioteca para Audio
 //incluyendo biblioteca de irrklang
-#include <irrKlang.h>
+#include <irrKlang.h> 
 
 //enlazando al dll
 #pragma comment(lib, "irrKlang.lib")
@@ -20,29 +78,31 @@ irrklang::ISoundEngine* engine = irrklang::createIrrKlangDevice();
 irrklang::ISoundSource* audioFondo = engine->addSoundSourceFromFile("audios/101-opening.mp3");
 
 //agregando fuente de sonido para el audio de pikachu que es lanzado con tecla
-irrklang::ISoundSource* audioPikachu = engine->addSoundSourceFromFile("audios/025-Pikachu.wav");
-
-
-//----------------------------------------------
-//para Linux las fuentes de sonido deben ser ogg
-
-//agregando fuente de sonido para el audio de fondo
-//irrklang::ISoundSource* audioFondo = engine->addSoundSourceFromFile("audios/101-opening.ogg");
-
-//agregando fuente de sonido para el audio de pikachu que es lanzado con tecla
-//irrklang::ISoundSource* audioPikachu = engine->addSoundSourceFromFile("audios/025-Pikachu.ogg");
-//----------------------------------------------
-
+irrklang::ISoundSource* audioPikachu = engine->addSoundSourceFromFile("audios/pajaro.mp3");
+//---------------------------------------------------------------------------------------------------//
 
 //variables para cámara
 CCamera objCamera;	//Create objet Camera
 GLfloat g_lookupdown = 0.0f;    // Look Position In The Z-Axis (NEW) 
 
+// ------- Para la Iluminación
+GLfloat diffuse[] = { 0.5f, 0.5f, 0.5f, 1.0f };			// Diffuse Light Values
+GLfloat specular[] = { 1.0, 1.0, 1.0, 1.0 };				// Specular Light Values
+GLfloat position[] = { 2.0f, 10.0f, 10.0f, 0.0f };			// Light Position
+GLfloat position2[] = { 0.0f, 0.0f, -5.0f, 1.0f };			// Light Position
+
+GLfloat diffuseMaterial[4] = { 0.4, 0.4, 0.4, 1.0 };
 
 //variables para texto dibujado
 char s[30];
 long int font = (long int)GLUT_BITMAP_HELVETICA_18;
 
+
+GLfloat altura_dron = 0.0;
+GLfloat t = 0.0;
+GLfloat ang_rot_helices = 0.0;
+GLfloat ang_rot_dron = 0.0;
+bool anima_dron = true;
 
 //objetos de textura para skybox
 CTexture textSkyboxUnica;
@@ -66,7 +126,6 @@ CTexture textBasePasto;
 CTexture text1; //techo edificio #1
 CTexture text2; //frente edificio #1
 
-
 //objetos de figura
 CFiguras figSkybox;
 CFiguras figCampo;
@@ -74,21 +133,54 @@ CFiguras figGradaFrontal;
 CFiguras figPostes;
 CFiguras figCaminoPeatonal;
 CFiguras figCaminoCarritos;
-CFiguras figBasePasto;
 CFiguras figEdificio;
+CFiguras cf_objeto;
+CFiguras monito;
+
+//Texturas para objetos Lego
+CTexture t_concreto;
+CTexture t_concreto2;
+CTexture t_cesped;
+CTexture t_piso_centro;
+CTexture t_carreterarecta;
+CTexture t_carreteraX;
+
+CTexture t_metal;
+CTexture t_metalrojo;
+CTexture t_concreto1;
+CTexture t_basurero;
+CTexture t_metalnegro;
+CTexture helice_dron;
+CTexture t_cuerpo_dron;
+CTexture t_piedra;
+CTexture t_agua;
+CTexture t_tabique;
+CTexture t_corteza;
+CTexture t_pino;
+
+//Textura para edificios
+CTexture textEdificio1; //Edificio #1
+CTexture textEdificio2; //Edificio #2
+CTexture textEdificio3; //Edificio #3
+CTexture textVentanal;
+CTexture textTechoCem;
+CTexture textEdif_grande;
+CTexture textFachada;
+
+//textura muñequito
+CTexture text_cara; //Cara del muñequito
 
 
+
+// Cargar Textuas //
 void inicializar(void)     // Inicializamos parametros
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);	// Negro de fondo	
 
 	glEnable(GL_TEXTURE_2D);
-
 	glShadeModel(GL_SMOOTH);
-
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-
 	glClearDepth(1.0f);			// Configuramos Depth Buffer
 	glEnable(GL_DEPTH_TEST);	// Habilitamos Depth Testing
 	glDepthFunc(GL_LEQUAL);		// Tipo de Depth Testing a realizar
@@ -97,10 +189,12 @@ void inicializar(void)     // Inicializamos parametros
 	glEnable(GL_AUTO_NORMAL);
 	glEnable(GL_NORMALIZE);
 
-
-	
 	//http://www.custommapmakers.org/skyboxes.php
 	//con imágenes hechas para skybox para cada lado y arriba
+
+	t_tabique.LoadBMP("texture/tabique.BMP");
+	t_tabique.BuildGLTexture();
+	t_tabique.ReleaseImage();
 
 	textSkyboxFrontal.LoadTGA("ely_hills/hills_ft.tga");
 	textSkyboxFrontal.BuildGLTexture();
@@ -122,7 +216,6 @@ void inicializar(void)     // Inicializamos parametros
 	textSkyboxArriba.BuildGLTexture();
 	textSkyboxArriba.ReleaseImage();
 	
-
 	//texturas para ciudad
 	textGradaFrontal.LoadTGA("city/casa01.tga");
 	textGradaFrontal.BuildGLTexture();
@@ -159,8 +252,11 @@ void inicializar(void)     // Inicializamos parametros
 	textBasePasto.LoadTGA("basePasto1.tga");
 	textBasePasto.BuildGLTexture();
 	textBasePasto.ReleaseImage();
-	
 
+	t_piso_centro.LoadTGA("texture/pastoLegoPiso.tga");
+	t_piso_centro.BuildGLTexture();
+	t_piso_centro.ReleaseImage();
+	
 	//Texturas para edificios
 	//para edificio #1
 	text1.LoadTGA("city/techo.tga"); //techo
@@ -170,6 +266,99 @@ void inicializar(void)     // Inicializamos parametros
 	text2.LoadTGA("city/casa01256.tga"); //frente
 	text2.BuildGLTexture();
 	text2.ReleaseImage();
+
+	//Texturas para Figuras Lego//
+	t_cesped.LoadBMP("texture/cesped.bmp");
+	t_cesped.BuildGLTexture();
+	t_cesped.ReleaseImage();
+
+	t_carreterarecta.LoadBMP("texture/carretera_recta.bmp");
+	t_carreterarecta.BuildGLTexture();
+	t_carreterarecta.ReleaseImage();
+
+	t_carreteraX.LoadBMP("texture/carreteraX.bmp");
+	t_carreteraX.BuildGLTexture();
+	t_carreteraX.ReleaseImage();
+
+	t_metalrojo.LoadBMP("texture/metal_rojo.bmp");
+	t_metalrojo.BuildGLTexture();
+	t_metalrojo.ReleaseImage();
+
+	t_metal.LoadTGA("texture/metal.tga");
+	t_metal.BuildGLTexture();
+	t_metal.ReleaseImage();
+
+	t_concreto1.LoadTGA("texture/concreto01.tga");
+	t_concreto1.BuildGLTexture();
+	t_concreto1.ReleaseImage();
+
+	t_concreto2.LoadBMP("texture/concreto02.BMP");
+	t_concreto2.BuildGLTexture();
+	t_concreto2.ReleaseImage();
+
+	t_basurero.LoadBMP("texture/basurero.BMP");
+	t_basurero.BuildGLTexture();
+	t_basurero.ReleaseImage();
+
+	t_metalnegro.LoadBMP("texture/metal_negro.bmp");
+	t_metalnegro.BuildGLTexture();
+	t_metalnegro.ReleaseImage();
+
+	helice_dron.LoadTGA("texture/helice_dron.tga");
+	helice_dron.BuildGLTexture();
+	helice_dron.ReleaseImage();
+
+	t_cuerpo_dron.LoadTGA("texture/t_cracked_b.tga");
+	t_cuerpo_dron.BuildGLTexture();
+	t_cuerpo_dron.ReleaseImage();
+
+	
+	t_piedra.LoadBMP("texture/piedra.BMP");
+	t_piedra.BuildGLTexture();
+	t_piedra.ReleaseImage();
+
+	t_agua.LoadBMP("texture/agua.BMP");
+	t_agua.BuildGLTexture();
+	t_agua.ReleaseImage();
+
+	t_corteza.LoadBMP("texture/corteza.BMP");
+	t_corteza.BuildGLTexture();
+	t_corteza.ReleaseImage();
+
+	t_pino.LoadBMP("texture/pino.BMP");
+	t_pino.BuildGLTexture();
+	t_pino.ReleaseImage();
+
+	//Texturas para edificios
+	textVentanal.LoadTGA("city/ventanas_v2.tga");
+	textVentanal.BuildGLTexture();
+	textVentanal.ReleaseImage();
+
+	textEdificio1.LoadTGA("city/edificio-grande_v2.tga");
+	textEdificio1.BuildGLTexture();
+	textEdificio1.ReleaseImage();
+
+	textEdificio2.LoadBMP("city/edificio-gigante.bmp");
+	textEdificio2.BuildGLTexture();
+	textEdificio2.ReleaseImage();
+
+	textTechoCem.LoadTGA("city/techo_v2.tga");
+	textTechoCem.BuildGLTexture();
+	textTechoCem.ReleaseImage();
+
+	textEdif_grande.LoadTGA("city/fachada_moderna_v2.tga");
+	textEdif_grande.BuildGLTexture();
+	textEdif_grande.ReleaseImage();
+
+	textFachada.LoadBMP("city/fachada-edificio.bmp");
+	textFachada.BuildGLTexture();
+	textFachada.ReleaseImage();
+
+
+	//textura muñequito
+	text_cara.LoadBMP("city/cara_v2.bmp");
+	text_cara.BuildGLTexture();
+	text_cara.ReleaseImage();
 
 	objCamera.Position_Camera(0, 2.5f, 3, 0, 2.5f, 0, 0, 1, 0);
 
@@ -186,173 +375,1663 @@ void inicializar(void)     // Inicializamos parametros
 
 	//reproduce el sonido sin detenerse
 	engine->play2D(audioFondo, true);
+
+	//NEW Iniciar variables de KeyFrames
+	for (int i = 0; i < MAX_FRAMES; i++)
+	{
+		KeyFrame[i].posXs = 0;
+		KeyFrame[i].posYs= 0;
+		KeyFrame[i].posZs = 0;
+		KeyFrame[i].incXs = 0;
+		KeyFrame[i].incYs = 0;
+		KeyFrame[i].incZs = 0;
+		//KeyFrame[i].rotRodIzq = 0;
+		//KeyFrame[i].rotInc = 0;
+		KeyFrame[i].giroMonito2 = 0;
+		KeyFrame[i].giroMonito2Inc = 0;
+	}
+
 }
 
-
-void ciudad (void)
+void saveFrame(void)
 {
-		glPushMatrix(); //base de pasto que cubre largo y profundidad del skybox
-			glScalef(130,0.025,130);
-			glDisable(GL_LIGHTING);
-			figBasePasto.prisma2(textBasePasto.GLindex, 0);
-			glEnable(GL_LIGHTING);
-		glPopMatrix();
 
+	printf("frameindex %d\n", FrameIndex);
+
+	KeyFrame[FrameIndex].posXs = posXs;
+	KeyFrame[FrameIndex].posYs = posYs;
+	KeyFrame[FrameIndex].posZs = posZs;
+	//KeyFrame[FrameIndex].rotRodIzq = rotRodIzq;
+	KeyFrame[FrameIndex].giroMonito2 = giroMonito2;
+
+	FrameIndex++;
+}
+
+void resetElements(void)
+{
+	posXs = KeyFrame[0].posXs;
+	posYs = KeyFrame[0].posYs;
+	posZs = KeyFrame[0].posZs;
+	//rotRodIzq = KeyFrame[0].rotRodIzq;
+	giroMonito2 = KeyFrame[0].giroMonito2;
+
+}
+
+void interpolation(void)
+{
+	KeyFrame[playIndex].incXs = (KeyFrame[playIndex + 1].posXs - KeyFrame[playIndex].posXs) / i_max_steps;
+	KeyFrame[playIndex].incYs = (KeyFrame[playIndex + 1].posYs - KeyFrame[playIndex].posYs) / i_max_steps;
+	KeyFrame[playIndex].incZs = (KeyFrame[playIndex + 1].posZs - KeyFrame[playIndex].posZs) / i_max_steps;
+
+	//KeyFrame[playIndex].rotInc = (KeyFrame[playIndex + 1].rotRodIzq - KeyFrame[playIndex].rotRodIzq) / i_max_steps;
+	KeyFrame[playIndex].giroMonito2Inc = (KeyFrame[playIndex + 1].giroMonito2 - KeyFrame[playIndex].giroMonito2) / i_max_steps;
+
+}
+
+
+//--------- Fuguras Lego -----------------//
+void bloqueLego_1x1()
+{
+	//Codigo que genera 1 unico bloque de lego//
+	glPushMatrix();
+		
+	cf_objeto.prisma(1.0, 1.0, 1.0, t_cesped.GLindex);
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0.0, 0.5, 0.0);
+		cf_objeto.cilindro(0.25, 0.3, 60.0, t_cesped.GLindex);
+	glPopMatrix();
+}
+void cesped_central()
+{
+	glPushMatrix();
+	glRotatef(90.0, 1.0, 0.0, 0.0);
+	cf_objeto.plano_text(80.0, 50.0, t_piso_centro.GLindex, 5.0);
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90.0, 1.0, 0.0, 0.0);
+	glTranslatef(0.0, 50.0, 0.0);
+	cf_objeto.plano_text(80.0, 30.0, t_piso_centro.GLindex, 5.0);
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90.0, 1.0, 0.0, 0.0);
+	glTranslatef(0.0, -50.0, 0.0);
+	cf_objeto.plano_text(80.0, 30.0, t_piso_centro.GLindex, 5.0);
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90.0, 1.0, 0.0, 0.0);
+	glRotatef(90.0, 0.0, 0.0, 1.0);
+	glTranslatef(0.0, 57.5, 0.0);
+	cf_objeto.plano_text(50.0, 15.0, t_piso_centro.GLindex, 5.0);
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90.0, 1.0, 0.0, 0.0);
+	glRotatef(90.0, 0.0, 0.0, 1.0);
+	glTranslatef(0.0, -57.5, 0.0);
+	cf_objeto.plano_text(50.0, 15.0, t_piso_centro.GLindex, 5.0);
+	glPopMatrix();
+
+	//Cesped en las esquinas 
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(50, 57.5, 0.0);
+		cf_objeto.plano_text(30.0, 15.0, t_piso_centro.GLindex, 5.0);
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(-50, 57.5, 0.0);
+		cf_objeto.plano_text(30.0, 15.0, t_piso_centro.GLindex, 5.0);
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(50, -57.5, 0.0);
+		cf_objeto.plano_text(30.0, 15.0, t_piso_centro.GLindex, 5.0);
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(-50, -57.5, 0.0);
+		cf_objeto.plano_text(30.0, 15.0, t_piso_centro.GLindex, 5.0);
+	glPopMatrix();
+}
+void carretera_lego()
+{
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glTranslatef(0.0, 30.0, 0.0);
+		cf_objeto.plano_text(80.0, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(-90.0, 1.0, 0.0, 0.0);
+		glTranslatef(0.0, 30.0, 0.0);
+		cf_objeto.plano_text(80.0, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(0.0, 45.0, 0.0);
+		cf_objeto.plano_text(50.0, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(0.0, -45.0, 0.0);
+		cf_objeto.plano_text(50.0, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+
+	// Intersecciones
+	//1
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glTranslatef(45.0, 30.0, 0.0);
+		cf_objeto.plano_text(10.0, 10.0, t_carreteraX.GLindex, 10.0);
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glTranslatef(-45.0, 30.0, 0.0);
+		cf_objeto.plano_text(10.0, 10.0, t_carreteraX.GLindex, 10.0);
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glTranslatef(45.0, -30.0, 0.0);
+		cf_objeto.plano_text(10.0, 10.0, t_carreteraX.GLindex, 10.0);
+	glPopMatrix();
+
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glTranslatef(-45.0, -30.0, 0.0);
+		cf_objeto.plano_text(10.0, 10.0, t_carreteraX.GLindex, 10.0);
+	glPopMatrix();
+
+
+	// Tramos faltantes
+
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glTranslatef(57.5, 30.0, 0.0);
+		cf_objeto.plano_text(15.0, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+		glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glTranslatef(-57.5, 30.0, 0.0);
+		cf_objeto.plano_text(15.0, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glTranslatef(57.5, -30.0, 0.0);
+		cf_objeto.plano_text(15.0, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glTranslatef(-57.5, -30.0, 0.0);
+		cf_objeto.plano_text(15.0, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+
+	//-------------------
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(50.0, 45.0, 0.0);
+		cf_objeto.plano_text(30, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(-50.0, 45.0, 0.0);
+		cf_objeto.plano_text(30, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(50.0, -45.0, 0.0);
+		cf_objeto.plano_text(30, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90.0, 1.0, 0.0, 0.0);
+		glRotatef(90.0, 0.0, 0.0, 1.0);
+		glTranslatef(-50.0, -45.0, 0.0);
+		cf_objeto.plano_text(30, 10.0, t_carreterarecta.GLindex, 10.0);
+	glPopMatrix();
+
+	//Caminos dentro de la alameda 
+	//Camino horizontal
+	glPushMatrix();
+		glTranslatef(0.0, 0.0, 0.0);
+		glScalef(80, 0.1, 6.0);
+		//glDisable(GL_LIGHTING);
+		figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
+		//glEnable(GL_LIGHTING);
+	glPopMatrix();
+
+	//Camino vertical)
+	glPushMatrix();
+		glTranslatef(0.0, 0.0, 0.0);
+		glRotatef(90, 0, 1, 0);
+		glScalef(50, 0.1, 6.0);
+		//glDisable(GL_LIGHTING);
+		figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
+		//glEnable(GL_LIGHTING);
+	glPopMatrix();
+
+	//CAMINO ALREDEDOR DEL KIOSKO
+	glPushMatrix();
+		glTranslatef(24.0, 0.0, 0.0);
+		glRotatef(90, 0, 1, 0);
+		glScalef(17, 0.1, 19.0);
+		//glDisable(GL_LIGHTING);
+		figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
+		//glEnable(GL_LIGHTING);
+	glPopMatrix();
+
+	//CAMINO ALREDEDOR DE LA FUENTE
+	glPushMatrix();
+		glTranslatef(-24.0, 0.0, 0.0);
+		glRotatef(90, 0, 1, 0);
+		glScalef(17, 0.1, 17.0);
+		//glDisable(GL_LIGHTING);
+		figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
+		//glEnable(GL_LIGHTING);
+	glPopMatrix();
+
+}
+
+void bloqueLego_1x1_lampara()
+{
+	//Codigo que genera 1 unico bloque de lego//
+	glPushMatrix();
+		cf_objeto.prisma(1.0, 1.0, 1.0, t_metalrojo.GLindex);
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0.0, 0.5, 0.0);
+		cf_objeto.cilindro(0.25, 0.3, 60.0, t_metalrojo.GLindex);
+	glPopMatrix();
+}
+void lego_lampara()
+{
+	// base
+	glPushMatrix();
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 1; j++)
+		{
+			glPushMatrix();
+				glTranslatef((i * 1), 0.0, (j * 1));
+				bloqueLego_1x1_lampara();
+			glPopMatrix();
+		}
+	}
+	glPopMatrix();
+
+	// Tubo
+	glPushMatrix();
+		cf_objeto.cilindro(.2, 10, 60.0, t_metal.GLindex);
+	glPopMatrix();
+
+	//Lampara
+	glPushMatrix();
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 1; j++)
+		{
+			glPushMatrix();
+			glTranslatef((i * 1), 9.0, (j * 1));
+			bloqueLego_1x1_lampara();
+			glPopMatrix();
+		}
+	}
+	glPopMatrix();
+}
+void lego_lampara2()
+{
+	// base
+	glPushMatrix();
+	for (int i = 0; i < 1; i++)
+	{
+		for (int j = 0; j < 1; j++)
+		{
+			glPushMatrix();
+				glTranslatef((i * 1), 0.5, (j * 1));
+				bloqueLego_1x1_lampara();
+			glPopMatrix();
+		}
+	}
+	glPopMatrix();
+
+	// Tubo
+	glPushMatrix();
+		cf_objeto.cilindro(.2, 10, 60.0, t_metal.GLindex);
+	glPopMatrix();
+	glPushMatrix();
+		glRotatef(90, 1.0, 0.0, 0.0);
+		glTranslatef(0.0, -2.0, -10.0);
+		cf_objeto.cilindro(.2, 4, 60.0, t_metal.GLindex);
+	glPopMatrix();
+
+
+	//Lampara
+	glPushMatrix();
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 1; j++)
+		{
+			glPushMatrix();
+				glTranslatef((i * 1)-0.5, 10.0, (j * 1)+2);
+				bloqueLego_1x1_lampara();
+				glTranslatef(0.0, 0.0,-4.0);
+				bloqueLego_1x1_lampara();
+			glPopMatrix();
+		}
+	}
+	glPopMatrix();
+}
+void dibuja_iluminarias()
+{
+	glPushMatrix();
+	glTranslatef(-49.5, 0.0, 24.5);
+	glPushMatrix();
+	lego_lampara();
+	glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-49.5, 0.0, -24.5);
+	glPushMatrix();
+	lego_lampara();
+	glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-49.5, 0.0, -8.166666667);
+	glPushMatrix();
+	lego_lampara();
+	glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-49.5, 0.0, 8.166666667);
+	glPushMatrix();
+	lego_lampara();
+	glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-49.5, 0.0, 34.5);
+	glPushMatrix();
+	lego_lampara();
+	glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-49.5, 0.0, 50.0);
+	glPushMatrix();
+	lego_lampara();
+	glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-49.5, 0.0, -34.5);
+	glPushMatrix();
+	lego_lampara();
+	glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-49.5, 0.0, -50.0);
+	glPushMatrix();
+	lego_lampara();
+	glPopMatrix();
+	glPopMatrix();
+
+
+	//-------------------//
+	glPushMatrix();
+	glRotatef(180, 0.0, 1.0, 0.0);
+		glTranslatef(-49.5, 0.0, 24.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(180, 0.0, 1.0, 0.0);
+		glTranslatef(-49.5, 0.0, -24.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(180, 0.0, 1.0, 0.0);
+		glTranslatef(-49.5, 0.0, -8.166666667);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(180, 0.0, 1.0, 0.0);
+		glTranslatef(-49.5, 0.0, 8.166666667);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(-49.5, 0.0, 34.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(-49.5, 0.0, 50.0);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(-49.5, 0.0, -34.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(-49.5, 0.0, -50.0);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(180, 0.0, 1.0, 0.0);
+		glTranslatef(-49.5, 0.0, 34.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(180, 0.0, 1.0, 0.0);
+		glTranslatef(-49.5, 0.0, 50.0);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(180, 0.0, 1.0, 0.0);
+		glTranslatef(-49.5, 0.0, -34.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(180, 0.0, 1.0, 0.0);
+		glTranslatef(-49.5, 0.0, -50.0);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	//-----------------------------------//
+	glPushMatrix();
+	glRotatef(90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, 24.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, -24.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, -8.166666667);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, 8.166666667);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, -39.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, 39.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, -59.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, 59.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+	//-----------------------------------------//
+	glPushMatrix();
+	glRotatef(-90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, 24.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(-90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, -24.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(-90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, -8.166666667);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(-90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, 8.166666667);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(-90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, -39.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(-90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, 39.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(-90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, -59.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glRotatef(-90, 0.0, 1.0, 0.0);
+		glTranslatef(-36.5, 0.0, 59.5);
+		glPushMatrix();
+			lego_lampara();
+		glPopMatrix();
+	glPopMatrix();
+
+	//----------------------//
+}
+
+void bloqueLego_1x1_banca()
+{
+	//Codigo que genera 1 unico bloque de lego//
+	glPushMatrix();	
+		cf_objeto.prisma(1, 1, 1, t_concreto1.GLindex);
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0.0, 0.5, 0.0);
+		cf_objeto.cilindro(0.25, 0.30, 60.0, t_concreto1.GLindex);
+	glPopMatrix();
+
+}
+void bloqueLego_1x4_banca()
+{
+	glPushMatrix();
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 1; j++)
+		{
+			glPushMatrix();
+			glTranslatef((i * 1), 0.0, (j * 1));
+			bloqueLego_1x1_banca();
+			glPopMatrix();
+		}
+	}
+	glPopMatrix();
+}
+void banca_publica()
+{
 	
-		glPushMatrix(); //Campo
-			//glTranslatef(23.5,0.0,0.0);
-			//el campo mide 100 x 64 pero usaré la mitad de tamaño
-			//agrego 4 más por el pasto fuera del campo
-			glScalef(54,0.1,36);
-			glDisable(GL_LIGHTING);
-			figCampo.prisma2(textCampo.GLindex, 0);
-			glEnable(GL_LIGHTING);
-		glPopMatrix();
+	//Descansa Brazos L//
+	glPushMatrix();
+		glTranslatef(0.0, 0.0, -5.0);
+		bloqueLego_1x4_banca();
+		glTranslatef(0.0, 1.0, 0.0);
+		bloqueLego_1x4_banca();
+		glTranslatef(0.0, 1.0, 0.0);
+		bloqueLego_1x4_banca();
+	glPopMatrix();
 
-		glPushMatrix(); //Grada frontal
-			glTranslatef(0.0,3.0,-21.0);
-			glRotatef(90,1,0,0);
-			//glRotatef(180,0,0,1);
-			glScalef(54,5.0,6);
-			glDisable(GL_LIGHTING);
-			figGradaFrontal.prisma2(textGradaFrontal.GLindex, 0);
-			glEnable(GL_LIGHTING);
-		glPopMatrix();
-		
-		glPushMatrix(); //poste1
-			glTranslatef(25.0, 0.0, -3.6);
-			figPostes.cilindro(0.1, 2.0, 30.0, 0);
-		glPopMatrix();
-		
-		glPushMatrix(); //poste2
-			glTranslatef(25.0, 0.0, 3.6);
-			figPostes.cilindro(0.1, 2.0, 30.0, 0);
-		glPopMatrix();
-		
-		glPushMatrix(); //travesaño
-			glTranslatef(25.0, 2.05, -3.65);
-			glRotatef(90.0, 1.0, 0.0, 0.0);
-			figPostes.cilindro(0.1, 7.32, 30.0, 0);
-		glPopMatrix();
-		
-		
-		glPushMatrix(); //Tierra inferior para espacio para arbolitos
-			glTranslatef(0.0,0.0,21.0);
-			//glRotatef(90,1,0,0);
-			//glRotatef(180,0,0,1);
-			glScalef(54,0.1,6);
-			glDisable(GL_LIGHTING);
-			figGradaFrontal.prisma2CaminosH(textTierra.GLindex, 6);
-			glEnable(GL_LIGHTING);
-		glPopMatrix();	
-		
-		glPushMatrix(); //Tierra lateral derecha para espacio para arbolitos
-			glTranslatef(30.0,0.0,0.0);
-			glRotatef(90,0,1,0);
-			//glRotatef(180,0,0,1);
-			glScalef(48,0.1,6);
-			glDisable(GL_LIGHTING);
-			figGradaFrontal.prisma2CaminosH(textTierra.GLindex, 6);
-			glEnable(GL_LIGHTING);
-		glPopMatrix();
-		
-		
-		//bloque para camino peatonal
-		glPushMatrix(); //camino peatonal inferior
-			glTranslatef(0.0,0.0,26.0);
-			glScalef(66,0.1,4);
-			glDisable(GL_LIGHTING);
-			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
-			glEnable(GL_LIGHTING);
-		glPopMatrix();	
-		
-		glPushMatrix(); //camino peatonal lateral derecho
-			glTranslatef(35.0,0.0,0.0);
-			glRotatef(90,0,1,0);
-			glScalef(56,0.1,4);
-			glDisable(GL_LIGHTING);
-			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
-			glEnable(GL_LIGHTING);
-		glPopMatrix();	
+	//Descansa Brazos L//
+	glPushMatrix();
+		glTranslatef(0.0, 0.0, 5.0);
+		bloqueLego_1x4_banca();
+		glTranslatef(0.0, 1.0, 0.0);
+		bloqueLego_1x4_banca();
+		glTranslatef(0.0, 1.0, 0.0);
+		bloqueLego_1x4_banca();
+	glPopMatrix();
 
-
-		//camino peatonal lateral izquierdo
+	//silla
+	glPushMatrix();
 		glPushMatrix();
-			glTranslatef(-35.0, 0.0, 0.0);
-			glRotatef(90, 0, 1, 0);
-			glScalef(56, 0.1, 4.0);
-			glDisable(GL_LIGHTING);
-			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
-			glEnable(GL_LIGHTING);
+		for (int i = 0; i < 4; i++)
+			{
+			for (int j = 0; j < 10; j++)
+			{
+				glPushMatrix();
+				glTranslatef((i * 1.0), 2.0, (j * 1.0)-5);
+				bloqueLego_1x1_banca();
+				glPopMatrix();
+			}
+		}
 		glPopMatrix();
+	glPopMatrix();
+}
 
-		//camino peatonal superior
+void bancas_y_luces()
+{
+	glPushMatrix();
+	glTranslatef(-37.5, 0.0, -14.0);
+		lego_lampara2();
 		glPushMatrix();
-			glTranslatef(0.0, 0.0, -26.0);
-			glScalef(66, 0.1, 4);
-			glDisable(GL_LIGHTING);
-			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
-			glEnable(GL_LIGHTING);
+		glScalef(0.5, 0.5, 0.5);
+			glTranslatef(-1.5, 0.5, 7.0);
+			banca_publica();
 		glPopMatrix();
+	glPopMatrix();
 
-		//camino peatonal superior (frente a los edificios)
+	glPushMatrix();
+	glTranslatef(37.5, 0.0, -14.0);
+		lego_lampara2();
 		glPushMatrix();
-			glTranslatef(0.0, 0.0, -36.0);
-			glScalef(66, 0.1, 4);
-			glDisable(GL_LIGHTING);
-			figCaminoPeatonal.prisma2CaminosH(textCaminoPeatonal.GLindex, 6);
-			glEnable(GL_LIGHTING);
+		glScalef(0.5, 0.5, 0.5);
+			glTranslatef(-1.5, 0.5, 7.0);
+			banca_publica();
 		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-37.5, 0.0, -52.0);
+		lego_lampara2();
+		glPushMatrix();
+		glScalef(0.5, 0.5, 0.5);
+			glTranslatef(-1.5, 0.5, 7.0);
+			banca_publica();
+		glPopMatrix();
+	glPopMatrix();
+	//---------------------------------//
+
+	glPushMatrix();
+	glTranslatef(36.25, 0.0, 14.0);
+		lego_lampara2();
+		glPushMatrix();
+		glScalef(0.5, 0.5, 0.5);
+			glTranslatef(1.5, 0.5, -7.0);
+			banca_publica();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(-37.5, 0.0, 14.0);
+		lego_lampara2();
+		glPushMatrix();
+		glScalef(0.5, 0.5, 0.5);
+			glTranslatef(1.5, 0.5, -7.0);
+			banca_publica();
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(36.25, 0.0, 55.0);
+		lego_lampara2();
+		glPushMatrix();
+		glScalef(0.5, 0.5, 0.5);
+			glTranslatef(1.5, 0.5, -7.0);
+			banca_publica();
+		glPopMatrix();
+	glPopMatrix();
+}
+
+void bloque_lego1x1_trash()
+{
+	//Codigo que genera 1 unico bloque de lego//
+	glPushMatrix();
 		
-		//bloque para camino de carritos
-		glPushMatrix(); //camino carritos inferior
-			glTranslatef(0.0,0.0,31.0);
-			glScalef(74,0.05,6);
-			glDisable(GL_LIGHTING);
-			figCaminoPeatonal.prisma2CaminosH(textCaminoCarritos.GLindex, 6);
-			glEnable(GL_LIGHTING);
-		glPopMatrix();	
+	cf_objeto.prisma(0.5, 0.5, 0.5, t_metalnegro.GLindex);
+	glPopMatrix();
 
-		//camino de carritos superior
-		glPushMatrix(); 
-			glTranslatef(0.0, 0.0, -31.0);
-			glScalef(74, 0.05, 6);
-			glDisable(GL_LIGHTING);
-			figCaminoPeatonal.prisma2CaminosH(textCaminoCarritos.GLindex, 6);
-			glEnable(GL_LIGHTING);
+	glPushMatrix();
+		glTranslatef(0.0, 0.250, 0.0);
+		cf_objeto.cilindro(0.125, 0.150, 60.0, t_metalnegro.GLindex);
+	glPopMatrix();
+}
+void bote_basuralego()
+{
+	
+		glPushMatrix();
+			glTranslatef(1.5, 0.0, 0.0);
+			glPushMatrix();
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i*0.5), 0.25, (j*0.5));
+						bloque_lego1x1_trash();
+					glPopMatrix();
+				}
+			}
+			glPushMatrix();
+				cf_objeto.cilindro(0.1, 4, 60.0, t_metal.GLindex);
+			glPopMatrix();
+			glPopMatrix();
 		glPopMatrix();
-		
-		glPushMatrix(); //camino carritos lateral derecho
-			glTranslatef(40.0,0.0,0.0);
-			glRotatef(90,0,1,0);
-			glScalef(68,0.05,6);
-			glDisable(GL_LIGHTING);
-			figCaminoPeatonal.prisma2CaminosH(textCaminoCarritos.GLindex, 6);
-			glEnable(GL_LIGHTING);
+	
+		glPushMatrix();
+			glTranslatef(-1.5, 0.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i*0.5), 0.250, (j*0.5));
+						bloque_lego1x1_trash();
+					glPopMatrix();
+				}
+			}
+			glPushMatrix();
+				cf_objeto.cilindro(0.1, 4, 60.0, t_metal.GLindex);
+			glPopMatrix();
 		glPopMatrix();
-
-		//camino de carritos lateral izquierdo
-		glPushMatrix(); 
-			glTranslatef(-40.0, 0.0, 0.0);
-			glRotatef(90, 0, 1, 0);
-			glScalef(68, 0.05, 6);
-			glDisable(GL_LIGHTING);
-			figCaminoPeatonal.prisma2CaminosH(textCaminoCarritos.GLindex, 6);
-			glEnable(GL_LIGHTING);
-		glPopMatrix();
-
-		//Dibujanda el edificio #1
-		glPushMatrix(); 
-			glTranslatef(0.0, 3.0, -40.5);
-			glRotatef(90, 1, 0, 0);
-			glRotatef(180, 0, 0, 1);
-			glScalef(10, 5.0, 6);
-			//glDisable(GL_LIGHTING);
-			figEdificio.prisma3(text2.GLindex, 0, text1.GLindex);
-			//glEnable(GL_LIGHTING);
+	
+		glPushMatrix();
+			glRotatef(90, 0.0, 0.0, 1.0);
+			glTranslatef(3.8,-1.5, 0.0);
+			cf_objeto.cilindro(0.1, 3.0, 60.0, t_metal.GLindex);
 		glPopMatrix();
 }
 
+void basureroAnima()
+{
+	glPushMatrix();
+	glTranslatef(0.0, 3.0, 0.0);
+		cf_objeto.prismaGabAnima(2.0, 3.5, 1.3, desplaza, t_metalrojo.GLindex, t_metalrojo.GLindex, t_metalrojo.GLindex);
+	glPopMatrix();
+}
+
+void bloqueLego_1xN_kiozco()
+{
+	//Codigo que genera 1 unico bloque de lego//
+	glPushMatrix();
+		
+	cf_objeto.prisma(1.0, 1.0, 1.0, t_concreto2.GLindex);
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0.0, 0.5, 0.0);
+		cf_objeto.cilindro(0.25, 0.3, 60.0, t_concreto2.GLindex);
+	glPopMatrix();
+}
+void kiozco()
+{
+	glPushMatrix();
+		glScalef(0.5, 0.5, 0.5);
+		for (int k = 0; k < 64; k++)
+		{
+			glRotatef((k*5.625), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 4.5, (j * 1) - 11);
+						bloqueLego_1xN_kiozco();
+					glPopMatrix();
+				}
+			}
+		}
+		glPushMatrix();
+		cf_objeto.cilindro(11.5, 2.0, 60.0, t_concreto2.GLindex);
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();
+		glScalef(0.5, 0.5, 0.5);
+		for (int k = 0; k < 32; k++)
+		{
+			glRotatef((k*11.25), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 3.0, (j * 1) - 11);
+						cf_objeto.prisma(2.0, 1.0, 1.0, t_concreto2.GLindex);
+					glPopMatrix();
+				}
+			}
+		}
+	glPopMatrix();
+
+
+	//Postes o soportes
+		glPushMatrix();
+		glScalef(0.5, 0.5, 0.5);
+		for (int k = 0; k < 4; k++)
+		{
+			glRotatef((k*90.0), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 8.0, (j * 1) - 11);
+						cf_objeto.prisma(6.0, 1.0, 1.0, t_concreto2.GLindex);
+					glPopMatrix();
+				}
+			}
+		}
+	glPopMatrix();
+	
+	//Techo
+	glPushMatrix();
+		glScalef(0.5, 0.5, 0.5);
+		glTranslatef(0.0, 11.0, 0.0);
+		cf_objeto.cono(7.0, 12.0, 60, t_concreto2.GLindex);
+	glPopMatrix();
+}
+void fuente()
+{
+	glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 32; k++)
+		{
+			glRotatef((k*11.25), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 0.5, (j * 1) -5);
+						bloqueLego_1xN_kiozco();
+					glPopMatrix();
+				}
+			}
+		}
+
+		glPushMatrix();
+			cf_objeto.cilindro(5.5, 0.1, 60.0, t_agua.GLindex);
+		glPopMatrix();
+	glPopMatrix();
+
+	//----------------------------------------------------//
+	//2fuente intera
+	//Zopote vertical
+	glPushMatrix();
+		glPushMatrix();
+			glScalef(0.75, 0.75, 0.75);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 6; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), (j+0.5), 0.0);
+						bloqueLego_1xN_kiozco();
+					glPopMatrix();
+				}
+			}
+		glPopMatrix();
+		glPushMatrix();
+			glTranslatef(0.0, 2.5, 0.0);
+			cf_objeto.cilindro(2.0, 0.05, 60.0, t_agua.GLindex);
+		glPopMatrix();
+
+		glPushMatrix();
+			glTranslatef(0.0, 2.25, 0.0);
+			cf_objeto.cilindro(2.0, 0.05, 60.0, t_concreto2.GLindex);
+		glPopMatrix();
+	glPopMatrix();
+	
+	//---------------------------------------------------//
+	glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 16; k++)
+		{
+			glRotatef((k*22.5), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 3.5, (j * 1) - 3.0);
+						bloqueLego_1xN_kiozco();
+					glPopMatrix();
+				}
+			}
+		}
+	glPopMatrix();
+
+	//---------------------------------------------//
+	//3Er fuente
+	glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 8; k++)
+		{
+			glRotatef((k*45), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 6.5, (j * 1) - 1.5);
+						bloqueLego_1xN_kiozco();
+					glPopMatrix();
+				}
+			}
+		}
+
+		glPushMatrix();
+			glTranslatef(0.0, 6.1, 0.0);
+			cf_objeto.cilindro(1.1, 0.05, 60.0, t_agua.GLindex);
+		glPopMatrix();
+
+		glPushMatrix();
+			glTranslatef(0.0, 6.0, 0.0);
+			cf_objeto.cilindro(1.1, 0.05, 60.0, t_concreto2.GLindex);
+		glPopMatrix();
+
+	glPopMatrix();
+
+}
+
+//Muro//
+void bloqueLego_1x1_muro()
+{
+	glPushMatrix();
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 1; j++)
+		{
+			glPushMatrix();
+			glTranslatef((i * 1), 0.0, (j * 1));
+			bloqueLego_1x1_banca();
+			glPopMatrix();
+		}
+	}
+	glPopMatrix();
+}
+void muro()
+{
+	//Postes o soportes
+	glPushMatrix();
+		//--Izquierda--//
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(-78.75, 3.0, 48.75);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);
+			glTranslatef(0.0, 0.0, -32.5);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);
+		glPopMatrix();
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(-78.75, 3.0, -48.75);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);
+			glTranslatef(0.0, 0.0, 32.5);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);
+		glPopMatrix();
+		//--Derecha--//
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(78.75, 3.0, 48.75);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);
+			glTranslatef(0.0, 0.0, -32.5);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);
+		glPopMatrix();
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(78.75, 3.0, -48.75);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);
+			glTranslatef(0.0, 0.0, 32.5);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);
+		glPopMatrix();
+		//--Abajo--//
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(39.375, 3.0, 48.75);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);//1
+			glTranslatef(-46, 0.0, 0.0);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);//2
+			glTranslatef(14, 0.0, 0.0);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);//3
+		glPopMatrix();
+		//--Arriba--//
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(39.375, 3.0, -48.75);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);//1
+			glTranslatef(-46, 0.0, 0.0);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);//2
+			glTranslatef(14, 0.0, 0.0);
+			cf_objeto.prisma(6.0, 2.0, 2.0, t_tabique.GLindex);//3
+		glPopMatrix();
+
+		//--------------------------------------------------//
+		//--- Barda ---//
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(-75.0, 1.5, -48.75);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(23.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 7.0, 1.0, t_tabique.GLindex);//1
+		glPopMatrix();
+
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(-75.0, 1.5, 48.75);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(23.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 8.0, 1.0, t_tabique.GLindex);//1
+			glTranslatef(8.0, 0.0, 0.0);
+			cf_objeto.prisma(3.0, 7.0, 1.0, t_tabique.GLindex);//1
+		glPopMatrix();
+
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(78.75, 1.5, 44.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -8.5);
+			cf_objeto.prisma(3.0, 1.0, 8.0, t_tabique.GLindex);//1
+		glPopMatrix();
+
+		glPushMatrix();
+			glScalef(0.5, 0.5, 0.5);
+			glTranslatef(-78.75, 1.5, 44.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -9.0);
+			cf_objeto.prisma(3.0, 1.0, 9.0, t_tabique.GLindex);//
+			glTranslatef(0.0, 0.0, -8.5);
+			cf_objeto.prisma(3.0, 1.0, 8.0, t_tabique.GLindex);//1
+		glPopMatrix();
+	glPopMatrix();
+}
+
+//arboles
+void bloqueLego_1x1_corteza()
+{
+	//Codigo que genera 1 unico bloque de lego//
+	glPushMatrix();
+		cf_objeto.prisma(1.0, 1.0, 1.0, t_corteza.GLindex);
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0.0, 0.5, 0.0);
+		cf_objeto.cilindro(0.25, 0.3, 60.0, t_corteza.GLindex);
+	glPopMatrix();
+}
+void bloqueLego_1x1_pino()
+{
+	//Codigo que genera 1 unico bloque de lego//
+	glPushMatrix();
+		
+	cf_objeto.prisma(1.0, 1.0, 1.0, t_pino.GLindex);
+	glPopMatrix();
+
+	glPushMatrix();
+		glTranslatef(0.0, 0.5, 0.0);
+		cf_objeto.cilindro(0.25, 0.3, 60.0, t_pino.GLindex);
+	glPopMatrix();
+}
+void arboles_lego()
+{
+	glPushMatrix();
+	//glScalef(0.5, 0.5, 0.5);
+		//Base//
+		glPushMatrix();
+		for (int i = 0; i < 2; i++)
+			{
+			for (int j = 0; j < 2; j++)
+			{
+				glPushMatrix();
+				glTranslatef((i * 1.0)-0.5, 0.5, (j * 1.0)-0.5);
+				bloqueLego_1x1_corteza();
+				glPopMatrix();
+			}
+		}
+		glPopMatrix();
+		//---------------------------------//
+		//Tronco
+		glPushMatrix();
+			for (int i = 0; i < 9; i++)
+				{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef(0.0, i+0.5 , 0.0);
+						bloqueLego_1x1_corteza();
+					glPopMatrix();
+				}
+			}
+		glPopMatrix();
+
+		//---------------------------------//
+		//cuerpo del pino
+		//1
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 32; k++)
+		{
+			glRotatef((k*11.25), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 2.5, (j * 1) - 5);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+
+		//---------------------------------//
+		//2
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 16; k++)
+		{
+			glRotatef((k*22.5), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 3.5, (j * 1) - 4.75);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+
+		//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 16; k++)
+		{
+			glRotatef((k*22.5), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 4.5, (j * 1) - 4.5);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+
+		//---------------------------------//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 16; k++)
+		{
+			glRotatef((k*22.5), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 5.5, (j * 1) - 4.25);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+		//---------------------------------//
+
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 16; k++)
+		{
+			glRotatef((k*22.5), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 6.5, (j * 1) - 4.0);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+		//---------------------------------//
+		//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 16; k++)
+		{
+			glRotatef((k*22.5), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 7.5, (j * 1) - 3.75);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+		//
+		//---------------------------------//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 16; k++)
+		{
+			glRotatef((k*22.5), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 8.5, (j * 1) - 3.5);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+		//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 16; k++)
+		{
+			glRotatef((k*22.5), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 9.5, (j * 1) - 3.25);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+		//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 16; k++)
+		{
+			glRotatef((k*22.5), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 10.5, (j * 1) - 3.0);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+		//---------------------------------//
+
+		//	//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 8; k++)
+		{
+			glRotatef((k*45), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 11.5, (j * 1) - 2.75);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+		//	//
+		//---------------------------------//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 8; k++)
+		{
+			glRotatef((k*45), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 12.5, (j * 1) - 2.5);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+
+		//---------------------------------//
+		//	//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 8; k++)
+		{
+			glRotatef((k*45), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 13.5, (j * 1) - 2.25);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+
+		//---------------------------------//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 8; k++)
+		{
+			glRotatef((k*45), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 14.5, (j * 1) - 2.0);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+
+		//---------------------------------//
+		//
+		glPushMatrix();
+		glScalef(0.75, 0.75, 0.75);
+		for (int k = 0; k < 8; k++)
+		{
+			glRotatef((k*45), 0.0, 1.0, 0.0);
+			for (int i = 0; i < 1; i++)
+			{
+				for (int j = 0; j < 1; j++)
+				{
+					glPushMatrix();
+						glTranslatef((i * 1), 15.5, (j * 1) - 1.5);
+						bloqueLego_1x1_pino();
+						glTranslatef(0.0, -1.0, 0.0);
+						bloqueLego_1x1_pino();
+						glTranslatef(0.0, -1.0, 0.0);
+						bloqueLego_1x1_pino();
+						glTranslatef(0.0, -1.0, 0.0);
+						bloqueLego_1x1_pino();
+						glTranslatef(0.0, -1.0, 0.0);
+						bloqueLego_1x1_pino();
+						glTranslatef(0.0, -1.0, 0.0);
+						bloqueLego_1x1_pino();
+						glTranslatef(0.0, -1.0, 0.0);
+						bloqueLego_1x1_pino();
+						glTranslatef(0.0, -1.0, 0.0);
+						bloqueLego_1x1_pino();
+						glTranslatef(0.0, -1.0, 0.0);
+						bloqueLego_1x1_pino();
+						glTranslatef(0.0, -1.0, 0.0);
+						bloqueLego_1x1_pino();
+					glPopMatrix();
+				}
+			}
+		}
+		glPopMatrix();
+
+		glPushMatrix();
+			glPushMatrix();
+				glTranslatef(0.0, 12.5, 0.0);
+				bloqueLego_1x1_pino();
+			glPopMatrix();
+		glPopMatrix();
+
+	glPopMatrix();
+}
+void dibuja_pinos_lego()
+{
+	glPushMatrix();
+
+		//Lado Izquierdo arboles//
+		//1
+		glPushMatrix();
+			glTranslatef(-55.0, 0.0, 0.0);
+			arboles_lego();
+		glPopMatrix();
+		//2
+		glPushMatrix();
+			glTranslatef(-55.0, 0.0, 15.0);
+			arboles_lego();
+		glPopMatrix();
+		//3
+		glPushMatrix();
+			glTranslatef(-55.0, 0.0, -15.0);
+			arboles_lego();
+		glPopMatrix();
+
+		//4
+		glPushMatrix();
+			glTranslatef(-10.0, 0.0, 10.0);
+			arboles_lego();
+		glPopMatrix();
+		//5
+		glPushMatrix();
+			glTranslatef(-10.0, 0.0, -10.0);
+			arboles_lego();
+		glPopMatrix();
+
+
+		//Lado Derecho arboles//
+		//1
+		glPushMatrix();
+			glTranslatef(55.0, 0.0, 0.0);
+			arboles_lego();
+		glPopMatrix();
+		//2
+		glPushMatrix();
+			glTranslatef(55.0, 0.0, 15.0);
+			arboles_lego();
+		glPopMatrix();
+		//3
+		glPushMatrix();
+			glTranslatef(55.0, 0.0, -15.0);
+			arboles_lego();
+		glPopMatrix();
+
+		//4
+		glPushMatrix();
+			glTranslatef(10.0, 0.0, 10.0);
+			arboles_lego();
+		glPopMatrix();
+		//5
+		glPushMatrix();
+			glTranslatef(10.0, 0.0, -10.0);
+			arboles_lego();
+		glPopMatrix();
+	glPopMatrix();
+}
 
 void arbol_fondoTransparente(CTexture textura)
 {
@@ -412,8 +2091,6 @@ void arbol_fondoTransparente(CTexture textura)
 
 	glPopMatrix();
 }
-
-
 void nube(CTexture textura)
 {
 	glPushMatrix();
@@ -504,8 +2181,6 @@ void nube(CTexture textura)
 		glEnd();
 	glPopMatrix();
 }
-
-
 void pintaTexto(float x, float y, float z, void *font, char *string)
 {
 	char *c;     //Almacena los caracteres a escribir
@@ -517,87 +2192,453 @@ void pintaTexto(float x, float y, float z, void *font, char *string)
 	}
 }
 
-void dibujar(void)   // Creamos la funcion donde se dibuja
-{
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		// Limpiamos pantalla y Depth Buffer
-
-	glLoadIdentity();
+void ala_dron() {
+	glColor3f(0.2, 0.2, 0.2);
+	cf_objeto.prisma(12.0, 0.2, 1.0, 0); //ala dron
+	glPushMatrix();
+	glTranslatef(5.5, 0.0, 0.0);
+	cf_objeto.cilindro(0.5, 1.5, 50.0, 0); //balero helice
+	glPushMatrix();
+	glTranslatef(0.0, 1.5, 0.0);
+	glRotatef(90.0, 1.0, 0.0, 0.0);
+	glColor3f(1.0, 1.0, 1.0);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.1);
+	glRotatef(ang_rot_helices, 0.0, 0.0, 1.0); //animación helices
+	cf_objeto.plano(20.0, 20.0, helice_dron.GLindex); //helice
+	glDisable(GL_ALPHA_TEST);
+	glPopMatrix();
+	glPopMatrix();
+	glColor3f(1.0, 1.0, 1.0);
+}
+void dron() {
+	cf_objeto.prisma(8.5, 5.0, 22.0, t_cuerpo_dron.GLindex); //cuerpo dron
+	glPushMatrix();
+	glTranslatef(-8.0, 2.0, -9.0);
+	glRotatef(135.0, 0.0, 1.0, 0.0);
+	ala_dron();
+	glPopMatrix();
 
 	glPushMatrix();
+	glTranslatef(8.0, 2.0, -9.0);
+	glRotatef(45.0, 0.0, 1.0, 0.0);
+	ala_dron();
+	glPopMatrix();
 
+	glPushMatrix();
+	glTranslatef(-8.0, 2.0, 9.0);
+	glRotatef(-135.0, 0.0, 1.0, 0.0);
+	ala_dron();
+	glPopMatrix();
 
-		glRotatef(g_lookupdown, 1.0f, 0, 0);
-	
-		gluLookAt(objCamera.mPos.x, objCamera.mPos.y, objCamera.mPos.z,
-			objCamera.mView.x, objCamera.mView.y, objCamera.mView.z,
-			objCamera.mUp.x, objCamera.mUp.y, objCamera.mUp.z);
-	
-	
+	glPushMatrix();
+	glTranslatef(8.0, 2.0, 9.0);
+	glRotatef(-45.0, 0.0, 1.0, 0.0);
+	ala_dron();
+	glPopMatrix();
+}
+
+void persona(void)
+{
+	//glNewList(1, GL_COMPILE);
+	glPushMatrix();//Pecho
+		glScalef(0.5, 0.5, 0.5);
+		glColor3f(0.976, 0.733, 0.223);
+		monito.prisma(2.0, 2.0, 1, 0);
+		glColor3f(1.0, 1.0, 1.0);
+
+		glPushMatrix();//Cuello
+		glColor3f(1, 0.886, 0.0);//Aquí se cambia el color
+		glTranslatef(0, 1.0, 0.0);
+		monito.cilindro(0.35, 2.0, 15, 0);
+		glPushMatrix();//Cabeza
+			glTranslatef(0, 1.0, 0);
+			glColor3f(1, 0.886, 0.0);//Aquí se cambia el color
+			monito.esfera(0.75, 15, 15, 0);
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix(); //Brazo derecho-->
+		glTranslatef(1.35, 0.65, 0);
+		//monito.esfera(0.5, 12, 12, 0);//Manga de la playera
 		glPushMatrix();
-		
-			glPushMatrix(); //Creamos cielo
-				glDisable(GL_LIGHTING);
-						
-				//skybox modificado para recibir una imagen por cada cara
-				figSkybox.skyboxH(130.0, 130.0, 130.0,textSkyboxFrontal.GLindex, textSkyboxAtras.GLindex, textSkyboxIzquierda.GLindex, textSkyboxDerecha.GLindex, textSkyboxArriba.GLindex);
-					
-				glEnable(GL_LIGHTING);
-			glPopMatrix();
-	
-	
-			glPushMatrix(); //creamos la ciudad
-				glEnable ( GL_COLOR_MATERIAL );
-					ciudad();
-				glDisable ( GL_COLOR_MATERIAL );
-			glPopMatrix();	
-			
-			
-			glPushMatrix(); //creamos varios árbolitos con fondo transparente
-				glTranslatef(0.0, 0.0, 21.0);
-				arbol_fondoTransparente(textArbol1);
-				
-				glPushMatrix();
-					glTranslatef(10.0, 0.0, 0.0);
-					glScalef(0.5, 0.5, 0.5);
-					arbol_fondoTransparente(textArbol2);
-				glPopMatrix();
-			glPopMatrix();
+			//glTranslatef(0.25, 0, 0);
+			glRotatef(-90, 0, 1, 0);
+			glTranslatef(0.75, 0, 0);
+			glColor3f(1, 0.886, 0.0);//AQUÍ SE CAMBIA EL COLOR
+			monito.prisma(0.7, 1.5, 0.7, 0);
+		glPopMatrix();
+	glPopMatrix();
 
-			//creando un arbolito propio
-			glPushMatrix();
-			glTranslatef(0.0, 0.0, 40.0);
-			arbol_fondoTransparente(textArbol1);
-			glScalef(0.5, 0.5, 0.5);
-			glPopMatrix();
+	glPushMatrix(); //Brazo izquierdo <--
+		glTranslatef(-1.35, 0.65, 0);
+		//monito.esfera(0.5, 12, 12, 0);//Manga de la playera
+		glPushMatrix();
+			//glTranslatef(-0.25, 0, 0);
+			glRotatef(-90, 0, 1, 0);
+			//glRotatef(25, 0, 0, 1);
+			//glRotatef(25, 1, 0, 0);
+			glTranslatef(0.75, 0, 0);
+			glColor3f(1, 0.886, 0.0);//AQUI SE CAMBIA EL COLOR
+			monito.prisma(0.7, 1.5, 0.7, 0);
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();//Cintura
+		glTranslatef(0, -1.5, 0);
+		glColor3f(0.0, 0.0, 0.0);
+		//glColor3f(0.223, 0.623, 0.976);//AQUÍ SE CAMBIA EL COLOR DEL SHORT
+		monito.prisma(1, 2, 1, 0);
+
+	//Pierna derecha
+	glPushMatrix(); 
+		//glTranslatef(0.75, -1.8, 0);
+		glTranslatef(0.69, -1.8, 0);
+		//glTranslatef(0, -0.5, 0);
+		glColor3f(0.223, 0.623, 0.976);	//AQUÍ SE CAMBIA EL COLOR DE LA PIERNA
+		monito.prisma(2.6, 0.8, 1.0, 0);
+		glPushMatrix();
+			glTranslatef(0, -1.3, 0.3);
+			glColor3f(0.0, 0.0, 0.0);//Color del zapato
+			monito.prisma(0.3, 1.2, 1.5, 0);
+		glPopMatrix();
+	glPopMatrix();
+
 	
-			glPushMatrix(); //creamos árbolitos con ciclo
-				glTranslatef(30.0, 0.0, -24.0);
-	
-				for(int coloca=0; coloca<=48; coloca+=3)
-				{
-				glPushMatrix();
-					glTranslatef(0.0, 0.0, (float)coloca);
-					glScalef(0.2, 0.2, 0.2);
-					arbol_fondoTransparente(textArbol2);
-				glPopMatrix();
-				}
-			glPopMatrix();
-			
-	
-			glPushMatrix();
-				glTranslatef(0.0, 50.0, 0.0);
-				nube(textNube1);
-			glPopMatrix();
-	
-	
+	//Pierna Izquierda
+	glPushMatrix(); 
+		//glTranslatef(0.75, -1.8, 0);
+		glTranslatef(-0.69, -1.8, 0);
+		glColor3f(0.223, 0.623, 0.976);//AQUÍ SE CAMBIA EL COLOR DE LA PIERNA
+		monito.prisma(2.6, 0.8, 1.0, 0);
+		glPushMatrix();
+			glTranslatef(0, -1.3, 0.3);
+			glColor3f(0.0, 0.0, 0.0);//Color del zapato
+			monito.prisma(0.3, 1.2, 1.5, 0);
 		glPopMatrix();
 	glPopMatrix();
 
 
+	glPopMatrix();
+
+
+	glColor3f(1.0, 1.0, 1.0);
+	glPopMatrix();
+	//glEndList();
+}
+
+void persona2(void)
+{
+	//glNewList(1, GL_COMPILE);
+	glPushMatrix();//Pecho
+		glScalef(0.5, 0.5, 0.5);
+		glColor3f(0.976, 0.733, 0.223);
+		monito.prisma(2.0, 2.0, 1, 0);
+		glColor3f(1.0, 1.0, 1.0);
+
+	glPushMatrix();//Cuello
+		glColor3f(1, 0.886, 0.0);//Aquí se cambia el color
+		glTranslatef(0, 1.0, 0.0);
+		monito.cilindro(0.35, 2.0, 15, 0);
+		glPushMatrix();//Cabeza
+		glTranslatef(0, 1.0, 0);
+		glColor3f(1, 0.886, 0.0);//Aquí se cambia el color
+		monito.esfera(0.75, 15, 15, 0);
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix(); //Brazo derecho-->
+		glTranslatef(1.35, 0.65, 0);
+		//monito.esfera(0.5, 12, 12, 0);//Manga de la playera
+		glPushMatrix();
+		//glTranslatef(0.25, 0, 0);
+		glRotatef(-90, 0, 1, 0);
+		glTranslatef(0.75, 0, 0);
+		glColor3f(1, 0.886, 0.0);//AQUÍ SE CAMBIA EL COLOR
+		monito.prisma(0.7, 1.5, 0.7, 0);
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix(); //Brazo izquierdo <--
+		glTranslatef(-1.35, 0.65, 0);
+		//monito.esfera(0.5, 12, 12, 0);//Manga de la playera
+		glPushMatrix();
+		//glTranslatef(-0.25, 0, 0);
+		glRotatef(-90, 0, 1, 0);
+		//glRotatef(25, 0, 0, 1);
+		//glRotatef(25, 1, 0, 0);
+		glTranslatef(0.75, 0, 0);
+		glColor3f(1, 0.886, 0.0);//AQUI SE CAMBIA EL COLOR
+		monito.prisma(0.7, 1.5, 0.7, 0);
+		glPopMatrix();
+	glPopMatrix();
+
+	glPushMatrix();//Cintura
+		glTranslatef(0, -1.5, 0);
+		glColor3f(0.0, 0.0, 0.0);
+		//glColor3f(0.223, 0.623, 0.976);//AQUÍ SE CAMBIA EL COLOR DEL SHORT
+		monito.prisma(1, 2, 1, 0);
+
+		//Pierna derecha
+		glPushMatrix();
+		//glTranslatef(0.75, -1.8, 0);
+		glTranslatef(0.69, -1.8, 0);
+		//glTranslatef(0, -0.5, 0);
+		glColor3f(0.223, 0.623, 0.976);	//AQUÍ SE CAMBIA EL COLOR DE LA PIERNA
+		monito.prisma(2.6, 0.8, 1.0, 0);
+		glPushMatrix();
+		glTranslatef(0, -1.3, 0.3);
+		glColor3f(0.0, 0.0, 0.0);//Color del zapato
+		monito.prisma(0.3, 1.2, 1.5, 0);
+		glPopMatrix();
+	glPopMatrix();
+
+
+	//Pierna Izquierda
+	glPushMatrix();
+		//glTranslatef(0.75, -1.8, 0);
+		glTranslatef(-0.69, -1.8, 0);
+		glColor3f(0.223, 0.623, 0.976);//AQUÍ SE CAMBIA EL COLOR DE LA PIERNA
+		monito.prisma(2.6, 0.8, 1.0, 0);
+		glPushMatrix();
+		glTranslatef(0, -1.3, 0.3);
+		glColor3f(0.0, 0.0, 0.0);//Color del zapato
+		monito.prisma(0.3, 1.2, 1.5, 0);
+		glPopMatrix();
+	glPopMatrix();
+
+
+	glPopMatrix();
+
+
+	glColor3f(1.0, 1.0, 1.0);
+	glPopMatrix();
+	//glEndList();
+}
+
+//Codigo Principal//
+void dibujar(void)   // Creamos la funcion donde se dibuja
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		// Limpiamos pantalla y Depth Buffer
+	glLoadIdentity();
+
+	glPushMatrix();
+		glRotatef(g_lookupdown, 1.0f, 0, 0);
+		gluLookAt(objCamera.mPos.x, objCamera.mPos.y, objCamera.mPos.z,
+			objCamera.mView.x, objCamera.mView.y, objCamera.mView.z,
+			objCamera.mUp.x, objCamera.mUp.y, objCamera.mUp.z);
+	glPushMatrix();
+	
+	//---------------------------------------------------------------------------------------//
+	glPushMatrix(); //Creamos cielo
+		glDisable(GL_LIGHTING);
+		//skybox modificado para recibir una imagen por cada cara
+		figSkybox.skyboxH(130.0, 130.0, 130.0,textSkyboxFrontal.GLindex, textSkyboxAtras.GLindex, 
+			textSkyboxIzquierda.GLindex, textSkyboxDerecha.GLindex, textSkyboxArriba.GLindex);
+		glEnable(GL_LIGHTING);
+	glPopMatrix();
+
+	/////////////////////////////////////////////////////////////////////
+	//Animacion 2
+	// ---------- DRON sobrevolando --------------------------//
+	glPushMatrix();
+		glScalef(0.1, 0.1, 0.1);
+		glTranslatef(0.0, 0.0, 200.0);
+		glRotatef(GLfloat(ang_rot_dron), 0.0, 1.0, 0.0);
+		glTranslatef(200.0, 400.0 + altura_dron, 0.0);
+		dron();
+	glPopMatrix();
+	//
+	/////////////////////////////////////////////////////////////////////
+
+	glPushMatrix(); //Pasto
+		glEnable ( GL_COLOR_MATERIAL );
+		//piso_ext();
+		glDisable ( GL_COLOR_MATERIAL );
+	glPopMatrix();	
+			
+
+	//--------------------------//
+	//---Dibujado de objetos---//
+		//Nubes
+		glPushMatrix();
+			glTranslatef(0.0, 50.0, 0.0);
+			nube(textNube1);
+		glPopMatrix();
+
+		//Cesped
+		glPushMatrix();
+			cesped_central();
+		glPopMatrix();
+		//Calles
+		glPushMatrix();
+			carretera_lego();
+		glPopMatrix();
+		//---Luminarias de calles---//
+		glPushMatrix();
+			dibuja_iluminarias();
+			glutSolidSphere(0.1,20,20);
+		glPopMatrix();
+
+		//---------------------------------//
+		//---Dibuja Arboles----//
+		glPushMatrix();
+			dibuja_pinos_lego();
+		glPopMatrix();
+		
+		//---------------------------------//
+		//---Fuente Y Kiozco----//
+		glPushMatrix();
+			glScalef(1.2, 1.2, 1.2);
+			glTranslatef(-20.0, 0.0, 0.0);
+			fuente();
+		glPopMatrix();
+
+		glPushMatrix();
+			glScalef(1.2, 1.2, 1.2);
+			glTranslatef(20.0, 0.0, 0.0);
+			kiozco();
+		glPopMatrix();
+
+		glPushMatrix();
+			muro();
+		glPopMatrix();
+			
+			//--------------------------------------------------------------//
+			//---Bancas, botes y luminaria---//
+			glPushMatrix();
+				bancas_y_luces();
+				//Bote1
+				glPushMatrix();
+					glTranslatef(-36.125, 0.0, 16.0);
+					glRotatef(90, 0.0, 1.0, 0.0);
+					glScalef(0.5, 0.5, 0.5);
+					bote_basuralego();
+					basureroAnima();
+				glPopMatrix();
+				//Bote2
+				glPushMatrix();
+					glTranslatef(-36.125, 0.0, -16.0);
+					glRotatef(90, 0.0, 1.0, 0.0);
+					glScalef(0.5, 0.5, 0.5);
+					bote_basuralego();
+					basureroAnima();
+				glPopMatrix();
+				//bote3
+				glPushMatrix();
+					glTranslatef(36.5, 0.0, 16.0);
+					glRotatef(90, 0.0, 1.0, 0.0);
+					glScalef(0.5, 0.5, 0.5);
+					bote_basuralego();
+					basureroAnima();
+				glPopMatrix();
+				//bote4
+				glPushMatrix();
+					glTranslatef(36.5, 0.0, -16.0);
+					glRotatef(90, 0.0, 1.0, 0.0);
+					glScalef(0.5, 0.5, 0.5);
+					bote_basuralego();
+					basureroAnima();
+				glPopMatrix();
+			glPopMatrix();
+
+			//-----------------------------------------//
+			//**************************************************************
+			//CONSTRUCCIÓN DE EDIFICIOS
+			
+			glPushMatrix();
+				glTranslatef(0.0, 0.0, -43.5);
+				//glRotatef(90, 1, 0, 0);
+				//glRotatef(180, 0, 0, 1);
+				//glScalef(10.0, 7.0, 10.0);
+				//glDisable(GL_LIGHTING);
+				figEdificio.cilindro2(6.0, 30.0, 50, textVentanal.GLindex, textTechoCem.GLindex);
+				//textEdificio1.GLindex, textVentanal.GLindex, textTechoCem.GLindex
+				//glEnable(GL_LIGHTING);
+			glPopMatrix();
+
+			//Construcción de otro edificio
+			glPushMatrix();
+				glTranslatef(20.0, 7.5, -41.5);
+				glRotatef(90, 1, 0, 0);
+				glRotatef(180, 0, 0, 1);
+				glScalef(15.0, 7.0, 15.0);
+				//glDisable(GL_LIGHTING);
+				figEdificio.prisma3(textEdificio2.GLindex, textVentanal.GLindex, textTechoCem.GLindex);
+				//glEnable(GL_LIGHTING);
+			glPopMatrix();
+
+			//Construcción de otro edificio
+			glPushMatrix();
+				glTranslatef(-20.0, 10.5, -41.5);
+				glRotatef(90, 1, 0, 0);
+				glRotatef(180, 0, 0, 1);
+				glScalef(15.0, 7.0, 21.0);
+				//glDisable(GL_LIGHTING);
+				figEdificio.prisma3(textEdificio1.GLindex, textEdificio1.GLindex, textTechoCem.GLindex);
+				//glEnable(GL_LIGHTING);
+			glPopMatrix();
+
+			//CONSTRUCCIÓN DEL EDIFICIO TRASERO
+			glPushMatrix();
+				glTranslatef(-20.0, 22.0, 45.0);
+				glRotatef(90, 1, 0, 0);
+				glScalef(10.0, 8.0, 15);
+				figEdificio.prisma3(textEdif_grande.GLindex, textEdif_grande.GLindex, textTechoCem.GLindex);
+			glPopMatrix();
+
+			glPushMatrix();
+				glTranslatef(-20.0, 7.5, 45.0);
+				glRotatef(90, 1, 0, 0);
+				glScalef(20.0, 10.0, 15);
+				figEdificio.prisma3(textEdif_grande.GLindex, textEdif_grande.GLindex, textTechoCem.GLindex);
+			glPopMatrix();
+			//****************************************************************************
+
+			//Se dibuja al muñequito
+			glPushMatrix();
+				glEnable(GL_COLOR_MATERIAL);
+				glColor3f(1, 1, 1);
+				//glScalef(0.5, 0.5, 0.5);
+				//monito();
+				//glCallList(ciudad_display_list);
+				glTranslatef(posX, posY, posZ);
+				//glRotatef(giroMonito, 0, 1, 0);
+				persona();
+				glDisable(GL_COLOR_MATERIAL);
+			glPopMatrix();
+
+			//Se dibuja al muñequito 2
+			glPushMatrix();
+				glEnable(GL_COLOR_MATERIAL);
+				glColor3f(1, 1, 1);
+				//glScalef(0.5, 0.5, 0.5);
+				//monito();
+				//glCallList(ciudad_display_list);
+				glTranslatef(posXs, posYs, posZs);
+				glRotatef(giroMonito2, 0, 1, 0);
+				persona2();
+				glDisable(GL_COLOR_MATERIAL);
+			glPopMatrix();
+			
+
+			//---------------------------------//
+			//---Codigo Prueba en el Origen----//
+			glPushMatrix();
+				
+			glPopMatrix();
+
+
+
+
+		
+		glPopMatrix();
+	glPopMatrix();
+
 	glDisable(GL_TEXTURE_2D);
 	glDisable(GL_LIGHTING);
 	glColor3f(1.0, 0.0, 0.0);
-	pintaTexto(-11, 12.0, -14.0, (void *)font, "Ejemplo de arboles");
+	pintaTexto(-11, 12.0, -14.0, (void *)font, "Alameda Lego");
 	pintaTexto(-11, 8.5, -14, (void *)font, s);
 	glColor3f(1.0, 1.0, 1.0);
 	glEnable(GL_LIGHTING);
@@ -605,7 +2646,87 @@ void dibujar(void)   // Creamos la funcion donde se dibuja
 
 	glFlush();
 	glutSwapBuffers();
+}
 
+// Animaciones Funcionando 100%
+void animacion()
+{
+	// Measure the elapsed time
+	clock_t currTime = clock();
+	//double timeSincePrevFrame = double(currTime - prevTime)/CLOCKS_PER_SEC;
+	double elapsedTime = double(currTime - startTime) / CLOCKS_PER_SEC;
+	//printf_s("%f\n", elapsedTime);
+
+
+	//////////////////////////////////////////////////////////////////
+	//Condición para correr la animación de los botes de basura
+	if (TrashAnima)
+		desplaza += 0.1;
+
+	//Condición para detener la animación de los botes de basura
+	if (!TrashAnima || desplaza >= 5.0)
+	{
+		desplaza = 0.0;
+		TrashAnima = false;
+	}
+	/////////////////////////////////////////////////
+
+
+	//////////////////////////////////////////////////////////////////
+	//Animación dron
+	if (true) {
+		ang_rot_dron = fmod((elapsedTime * 36), 360);
+		//altura_dron = 100.0*sin(0.05*t);
+		altura_dron = 100.0*sin((PI / 2)*elapsedTime);
+		ang_rot_helices = fmod((elapsedTime * 1080), 360);
+	} //else 
+	//////////////////////////////////////////////////////////////////
+
+	
+
+	////////////////////////////////////////////////////////////////////////
+	//ANIMACIÓN PARA EL MUÑEQUITO 2
+	//Movimiento de la personita
+	if (play)
+	{
+
+		if (i_curr_steps >= i_max_steps) //end of animation between frames?
+		{
+			playIndex++;
+			if (playIndex>FrameIndex - 2)	//end of total animation?
+			{
+				printf("termina anim\n");
+				playIndex = 0;
+				play = false;
+			}
+			else //Next frame interpolations
+			{
+				i_curr_steps = 0; //Reset counter
+								  //Interpolation
+				interpolation();
+
+			}
+		}
+		else
+		{
+			//Draw animation
+			posXs += KeyFrame[playIndex].incXs;
+			posYs += KeyFrame[playIndex].incYs;
+			posZs += KeyFrame[playIndex].incZs;
+
+			//rotRodIzq += KeyFrame[playIndex].rotInc;
+			giroMonito2 += KeyFrame[playIndex].giroMonito2Inc;
+
+			i_curr_steps++;
+
+		}
+
+
+	}
+
+
+	glutPostRedisplay();
+	prevTime = currTime;
 }
 
 
@@ -626,10 +2747,57 @@ void remodelar(int width, int height)
 
 	glMatrixMode(GL_MODELVIEW);		// Seleccionamos Modelview Matrix
 	glLoadIdentity();
+
+
+	//-----------------------------------------------//
+	//-----------------------------------------------//
+	
 }
+
+void menuKeyFrame(int id)
+{
+	switch (id)
+	{
+	case 0:	//Save KeyFrame
+		if (FrameIndex<MAX_FRAMES)
+		{
+			saveFrame();
+		}
+		break;
+
+	case 1:	//Play animation
+		if (play == false && FrameIndex >1)
+		{
+
+			resetElements();
+			//First Interpolation
+			interpolation();
+
+			play = true;
+			playIndex = 0;
+			i_curr_steps = 0;
+		}
+		else
+		{
+			play = false;
+		}
+		break;
+
+
+	}
+}
+
+void menu(int id)
+{
+
+}
+
+
 
 void teclado(unsigned char key, int x, int y)
 {
+	GLfloat dist = 30.0;
+
 	switch (key) {
 	case 'w': case 'W':
 		objCamera.Move_Camera(CAMERASPEED + 0.2);
@@ -640,16 +2808,70 @@ void teclado(unsigned char key, int x, int y)
 		break;
 
 	case 'a': case 'A':
-		objCamera.Strafe_Camera(-(CAMERASPEED + 0.4));
+		objCamera.Strafe_Camera(-(CAMERASPEED + 0.2));
 		break;
 
 	case 'd': case 'D':
-		objCamera.Strafe_Camera(CAMERASPEED + 0.4);
+		objCamera.Strafe_Camera(CAMERASPEED + 0.2);
+		break;
+
+		//posicion de inicio
+	case 'h':
+	case 'H':
+		objCamera.Position_Camera(0, 2.5f, 3, 0, 2.5f, 0, 0, 1, 0);
+		break;
+
+	//proyección isométrica
+	case 'j':
+	case 'J':
+		objCamera.Position_Camera(sqrt(3)*dist, sqrt(3)*dist, sqrt(3)*dist,
+			sqrt(3)*(dist - 45.0), sqrt(3)*(dist - 100.0), sqrt(3)*(dist - 50.0),
+			-1, 1, -1);
+		break;
+
+	//Con 1 se reproduce la animación de los Botes de basura
+	case '1':
+		TrashAnima ^= true;
+		break;
+
+	//Con 2 se reproduce la animación del dron
+	case '2':
+		anima_dron = !anima_dron;
 		break;
 
 	case 'p':
 		engine->play2D(audioPikachu);
 		break;
+
+	case 'c':
+		posXs++;
+		printf("%f \n", posX);
+		break;
+
+	case 'C':
+		posXs--;
+		printf("%f \n", posX);
+		break;
+
+	case 'z':
+		posZs++;
+		printf("%f \n", posZ);
+		break;
+
+	case 'Z':
+		posZs--;
+		printf("%f \n", posZ);
+		break;
+
+	case 'v':
+		giroMonito2--;
+		break;
+
+	case 'V':
+		giroMonito2++;
+		break;
+
+
 	case 27:  //Si presiona tecla ESC (ASCII 27) sale
 		exit(0);
 		break;
@@ -659,7 +2881,6 @@ void teclado(unsigned char key, int x, int y)
 
 	glutPostRedisplay();
 }
-
 void teclasFlechasFunc(int a_keys, int x, int y)
 {
 	switch (a_keys) {
@@ -721,6 +2942,8 @@ void teclasFlechasFunc(int a_keys, int x, int y)
 
 int main(int argc, char** argv)   // Main Function
 {
+	int submenu;
+
 	//inicializa GLUT con el sistema de ventanas pasando los argumentos del main
 	glutInit(&argc, argv);
 
@@ -729,14 +2952,14 @@ int main(int argc, char** argv)   // Main Function
 	//Buffer de profundidad
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 
-	//Define ventana de 500 pixeles de ancho por 500 de alto
-	glutInitWindowSize(500, 500);
+	//Define ventana de 500 pixeles de ancho por 800 de alto
+	glutInitWindowSize(700, 500);
 
 	//Posiciona la ventana de izquierda a derecha 400 pixeles y de arriba a abajo 100
 	glutInitWindowPosition(400, 100);
 
 	//Crea y abre la ventana y recibe el nombre que va en su barra de título
-	glutCreateWindow("Hola Mundo");
+	glutCreateWindow("Proyecto Final - Alameda Lego");
 
 	//Llamada a función propia para inicializar estados de opengl
 	inicializar();
@@ -752,11 +2975,27 @@ int main(int argc, char** argv)   // Main Function
 
 	//Lamada a función que maneja eventos del teclado con teclas de flechas de dirección y f1, f2 .. fn
 	glutSpecialFunc(teclasFlechasFunc);
+	glutPostRedisplay();
+
+	//Llamada a función que permite la animacion
+	glutIdleFunc(animacion);
+
+	//termina la ejecución devolviendo cero
+
+	// Initialize the time variables
+	startTime = glutGet(GLUT_ELAPSED_TIME);
+	prevTime = startTime;
+
+	//bloque para menú gráfico
+	submenu = glutCreateMenu(menuKeyFrame);
+	glutAddMenuEntry("Guardar KeyFrame", 0);
+	glutAddMenuEntry("Reproducir Animacion", 1);
+	glutCreateMenu(menu);
+	glutAddSubMenu("Animacion Monito y balon", submenu);
+
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 	//Llamada a función que cede el control a GLUT y procesa eventos de ventana, ratón
 	glutMainLoop();
-
-	//termina la ejecución devolviendo cero
 	return 0;
-
 }
